@@ -2,7 +2,7 @@
 
 Using the Django framework, Python, and JavaScript, create a web application that allows the user to build a ladder of TIPS (treasury inflation protected securities) to provide a constant after-tax real dollar (not nominal dollar) cash flow in each calendar year of the ladder. 
 
-More detailed specifications:
+More detail:
 
 1. There should be a navigation bar or menu at the top of all pages allowing users to visit any page of the site.
 
