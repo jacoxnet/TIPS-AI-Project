@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block title %}TIPS Market Data | TIPS Ladder{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="flex justify-between items-center mb-4">
+        <h1>Currently Outstanding TIPS</h1>
+        <p class="text-secondary">Source: US Treasury Fiscal Data</p>
+    </div>
+
+    <div class="table-container" style="max-height: 600px;">
+        <table id="tipsTable">
+            <thead>
+                <tr>
+                    <th>CUSIP</th>
+                    <th>Issue Date</th>
+                    <th>Maturity Date</th>
+                    <th>Interest Rate (%)</th>
+                    <th>Ref CPI</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for tip in tips_data %}
+                <tr>
+                    <td>{{ tip.cusip }}</td>
+                    <td>{{ tip.issue_date }}</td>
+                    <td>{{ tip.maturity_date }}</td>
+                    <td>{{ tip.interest_rate }}</td>
+                    <td>{{ tip.ref_cpi }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="text-center">Loading TIPS data...</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

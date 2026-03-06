@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+
+{% block title %}Ladder Results | TIPS Ladder{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="flex justify-between items-center mb-4">
+        <h1>TIPS Ladder Projection</h1>
+        <a href="{% url 'data_entry' %}" class="btn btn-secondary btn-sm">&larr; Edit Parameters</a>
+    </div>
+
+    <!-- Error container -->
+    {% if error %}
+    <div
+        style="background-color: var(--danger); color: white; padding: 1rem; border-radius: var(--radius-md); margin-bottom: 2rem;">
+        <strong>Error:</strong> {{ error }}
+    </div>
+    {% endif %}
+
+    {% if ladder_years %}
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Year</th>
+                    <th class="text-right">Target Cashflow</th>
+                    <th class="text-right">Coupon Income</th>
+                    <th class="text-right">Principal Maturing</th>
+                    <th class="text-right text-danger">Calculated TaxDrag</th>
+                    <th class="text-right" style="border-left: 2px solid var(--border-color);">Net Flow from Portfolio
+                    </th>
+                    <th class="text-right">Shortfall (Required Buy)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in ladder_years %}
+                <tr>
+                    <td><strong>{{ row.year }}</strong></td>
+                    <td class="text-right">${{ row.target|floatformat:2 }}</td>
+                    <td class="text-right text-success">+${{ row.coupon_income|floatformat:2 }}</td>
+                    <td class="text-right text-success">+${{ row.principal_income|floatformat:2 }}</td>
+                    <td class="text-right text-danger">-${{ row.tax_drag|floatformat:2 }}</td>
+                    <td class="text-right" style="border-left: 2px solid var(--border-color); font-weight:500;">
+                        ${{ row.net_flow|floatformat:2 }}
+                    </td>
+                    <td class="text-right"
+                        style="font-weight:700; color: {% if row.shortfall > 0 %}var(--danger){% else %}var(--success){% endif %};">
+                        {% if row.shortfall > 0 %}
+                        ${{ row.shortfall|floatformat:2 }}
+                        {% else %}
+                        (Excess: ${{ row.shortfall|stringformat:"f"|slice:"1:"|default:"0.00" }})
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% elif not error %}
+    <p class="text-center text-secondary">No projection data to display.</p>
+    {% endif %}
+</div>
+{% endblock %}
