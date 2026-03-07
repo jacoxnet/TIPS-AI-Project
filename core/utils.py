@@ -4,8 +4,8 @@ def fetch_tips_data():
     """Fetches the latest outstanding TIPS from the Treasury Fiscal Data API."""
     url = "https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v1/accounting/od/tips_cpi_data_summary"
     params = {
-        "page[size]": 50,
-        "sort": "-issue_date"
+        "page[size]": 100,
+        "sort": "-original_issue_date"
     }
     try:
         response = requests.get(url, params=params, timeout=10)
@@ -20,10 +20,10 @@ def fetch_tips_data():
             if cusip not in seen_cusips:
                 tips.append({
                     'cusip': cusip,
-                    'issue_date': item.get('issue_date', 'N/A'),
+                    'issue_date': item.get('original_issue_date', 'N/A'),
                     'maturity_date': item.get('maturity_date', 'N/A'),
                     'interest_rate': item.get('interest_rate', 'N/A'),
-                    'ref_cpi': item.get('ref_cpi', 'N/A'),
+                    'ref_cpi': item.get('ref_cpi_on_dated_date', 'N/A'),
                 })
                 seen_cusips.add(cusip)
                 
