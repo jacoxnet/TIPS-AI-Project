@@ -1,4 +1,5 @@
 import requests
+import datetime
 
 def fetch_tips_data():
     """Fetches the latest outstanding TIPS from the Treasury Fiscal Data API."""
@@ -27,6 +28,26 @@ def fetch_tips_data():
                 })
                 seen_cusips.add(cusip)
                 
+        # Fetch detailed data for the current date to get index ratios
+        today = datetime.date.today().isoformat()
+        detail_url = "https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v1/accounting/od/tips_cpi_data_detail"
+        detail_params = {
+            "filter": f"index_date:eq:{today}",
+            "page[size]": 100
+        }
+        detail_response = requests.get(detail_url, params=detail_params, timeout=10)
+        detail_response.raise_for_status()
+        detail_data = detail_response.json().get('data', [])
+        
+        # Create a mapping from CUSIP to index_ratio
+        index_ratios = {item.get('cusip'): item.get('index_ratio') for item in detail_data if item.get('cusip')}
+        
+        # Assign index_ratio to each tip
+        for tip in tips:
+            tip['index_ratio'] = index_ratios.get(tip.get('cusip'), 'N/A')
+
+        # Sort the TIPS by maturity date
+        tips.sort(key=lambda x: x['maturity_date'])
         return tips
     except Exception as e:
         print(f"Error fetching TIPS data: {e}")

@@ -18,6 +18,7 @@
                     <th>Maturity Date</th>
                     <th>Interest Rate (%)</th>
                     <th>Ref CPI</th>
+                    <th>Index Ratio</th>
                 </tr>
             </thead>
             <tbody>
@@ -28,10 +29,11 @@
                     <td>{{ tip.maturity_date }}</td>
                     <td>{{ tip.interest_rate }}</td>
                     <td>{{ tip.ref_cpi }}</td>
+                    <td>{{ tip.index_ratio }}</td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="5" class="text-center">Loading TIPS data...</td>
+                    <td colspan="6" class="text-center">Loading TIPS data...</td>
                 </tr>
                 {% endfor %}
             </tbody>
