@@ -98,5 +98,6 @@
 {% endblock %}
 
 {% block extra_js %}
+{{ tips_data_json|safe|json_script:"tips-data" }}
 <script src="{% static 'js/data_entry.js' %}"></script>
 {% endblock %}

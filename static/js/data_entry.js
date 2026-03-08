@@ -1,5 +1,35 @@
 document.addEventListener('DOMContentLoaded', function () {
 
+    // --- Parse TIPS Data ---
+    const tipsDataElement = document.getElementById('tips-data');
+    let tipsData = [];
+    if (tipsDataElement) {
+        try {
+            tipsData = JSON.parse(tipsDataElement.textContent);
+        } catch (e) {
+            console.error("Failed to parse TIPS data", e);
+        }
+    }
+
+    function populateDropdown(selectElement, idType, preselectedValue) {
+        selectElement.innerHTML = '<option value="" disabled selected>Select a TIP...</option>';
+        tipsData.forEach(tip => {
+            const option = document.createElement('option');
+            if (idType === 'cusip') {
+                option.value = tip.cusip;
+                option.textContent = tip.cusip;
+            } else {
+                const val = `${tip.interest_rate}%,${tip.maturity_date}`;
+                option.value = val;
+                option.textContent = `Coupon: ${tip.interest_rate}%, Maturity: ${tip.maturity_date}`;
+            }
+            selectElement.appendChild(option);
+        });
+        if (preselectedValue) {
+            selectElement.value = preselectedValue;
+        }
+    }
+
     // --- Elements ---
     const addCashFlowBtn = document.getElementById('addCashFlowBtn');
     const additionalCashFlowsContainer = document.getElementById('additionalCashFlowsContainer');
@@ -48,7 +78,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 </select>
             </td>
             <td>
-                <input type="text" class="tip-id-value" placeholder="CUSIP or '2.5%,2030-01-15'" required>
+                <select class="tip-id-value" required>
+                    <option value="" disabled selected>Select a TIP...</option>
+                </select>
             </td>
             <td>
                 <select class="tip-account-type" required>
@@ -65,6 +97,17 @@ document.addEventListener('DOMContentLoaded', function () {
             </td>
         `;
         ownedTipsTbody.appendChild(tr);
+
+        const idTypeSelect = tr.querySelector('.tip-id-type');
+        const idValueSelect = tr.querySelector('.tip-id-value');
+
+        // Initial populate
+        populateDropdown(idValueSelect, idTypeSelect.value);
+
+        // Update on change
+        idTypeSelect.addEventListener('change', () => {
+            populateDropdown(idValueSelect, idTypeSelect.value);
+        });
 
         tr.querySelector('.remove-btn').addEventListener('click', () => {
             tr.remove();
@@ -195,8 +238,21 @@ document.addEventListener('DOMContentLoaded', function () {
                 } else if (type === 'OWNED_TIP') {
                     addOwnedTipBtn.click();
                     const created = ownedTipsTbody.lastElementChild;
-                    created.querySelector('.tip-id-type').value = vals[1];
-                    created.querySelector('.tip-id-value').value = vals[2];
+                    const typeSelect = created.querySelector('.tip-id-type');
+                    const valueSelect = created.querySelector('.tip-id-value');
+                    
+                    typeSelect.value = vals[1];
+                    populateDropdown(valueSelect, vals[1], vals[2]);
+                    
+                    // Fallback in case value isn't found in options
+                    if (valueSelect.value !== vals[2]) {
+                        const opt = document.createElement('option');
+                        opt.value = vals[2];
+                        opt.textContent = vals[2] + ' (Loaded)';
+                        valueSelect.appendChild(opt);
+                        valueSelect.value = vals[2];
+                    }
+
                     created.querySelector('.tip-account-type').value = vals[3];
                     created.querySelector('.tip-quantity').value = vals[4];
                 }

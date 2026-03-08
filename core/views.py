@@ -1,3 +1,4 @@
+import json
 from django.shortcuts import render
 from .utils import fetch_tips_data
 from .ladder_calc import calculate_ladder
@@ -7,7 +8,10 @@ def home_view(request):
     return render(request, 'home.html', {'tips_data': tips_data, 'tips_date': tips_date})
 
 def data_entry_view(request):
-    return render(request, 'data_entry.html')
+    tips_data, _ = fetch_tips_data()
+    # Serialize to JSON to use in frontend JS
+    tips_data_json = json.dumps(tips_data)
+    return render(request, 'data_entry.html', {'tips_data_json': tips_data_json})
 
 def ladder_display_view(request):
     context = {}
