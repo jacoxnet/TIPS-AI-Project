@@ -1,12 +1,26 @@
 import requests
 import datetime
 
+tips_global = []
+tips_downloaded_date = None
+
 def fetch_tips_data():
-    """Fetches the latest outstanding TIPS from the Treasury Fiscal Data API."""
+    """
+    Fetches the latest outstanding TIPS from the Treasury Fiscal Data API.
+    Checks first to see if the TIPS data has already been downloaded for the current date.
+    If so, returns the cached data.
+    
+    """
+    global tips_global
+    global tips_downloaded_date
+    
+    if tips_global and tips_downloaded_date == datetime.date.today().isoformat():
+        return tips_global, tips_downloaded_date
+    
     url = "https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v1/accounting/od/tips_cpi_data_summary"
     params = {
         "page[size]": 100,
-        "sort": "-original_issue_date"
+        "sort": "-maturity_date"
     }
     try:
         response = requests.get(url, params=params, timeout=10)
@@ -48,7 +62,9 @@ def fetch_tips_data():
 
         # Sort the TIPS by maturity date
         tips.sort(key=lambda x: x['maturity_date'])
-        return tips
+        tips_global = tips
+        tips_downloaded_date = datetime.date.today().isoformat()
+        return tips, tips_downloaded_date   
     except Exception as e:
         print(f"Error fetching TIPS data: {e}")
-        return []
+        return [], None

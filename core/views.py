@@ -3,8 +3,8 @@ from .utils import fetch_tips_data
 from .ladder_calc import calculate_ladder
 
 def home_view(request):
-    tips_data = fetch_tips_data()
-    return render(request, 'home.html', {'tips_data': tips_data})
+    tips_data, tips_date = fetch_tips_data()
+    return render(request, 'home.html', {'tips_data': tips_data, 'tips_date': tips_date})
 
 def data_entry_view(request):
     return render(request, 'data_entry.html')
