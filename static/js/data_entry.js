@@ -92,7 +92,8 @@ document.addEventListener('DOMContentLoaded', function () {
             <td>
                 <input type="number" class="tip-quantity" placeholder="No. of $1k bonds" min="1" required>
             </td>
-            <td>
+            <td style="display: flex; gap: 0.5rem; justify-content: flex-start;">
+                <button type="button" class="btn btn-success btn-sm confirm-btn">Confirm</button>
                 <button type="button" class="btn btn-danger btn-sm remove-btn">Remove</button>
             </td>
         `;
@@ -109,6 +110,33 @@ document.addEventListener('DOMContentLoaded', function () {
             populateDropdown(idValueSelect, idTypeSelect.value);
         });
 
+        const inputsToLock = [idTypeSelect, idValueSelect, tr.querySelector('.tip-account-type'), tr.querySelector('.tip-quantity')];
+        const confirmBtn = tr.querySelector('.confirm-btn');
+        
+        confirmBtn.addEventListener('click', () => {
+            // Basic HTML5 Validity Check on inputs before locking
+            const isValid = inputsToLock.every(input => input.checkValidity());
+            if (!isValid) {
+                // Trigger natural validation warnings
+                inputsToLock.forEach(input => input.reportValidity());
+                return; 
+            }
+            
+            if (tr.classList.contains('confirmed')) {
+                // Edit Mode: Unlock
+                tr.classList.remove('confirmed');
+                confirmBtn.textContent = 'Confirm';
+                confirmBtn.classList.replace('btn-secondary', 'btn-success');
+                inputsToLock.forEach(input => input.disabled = false);
+            } else {
+                // Lock Mode
+                tr.classList.add('confirmed');
+                confirmBtn.textContent = 'Edit';
+                confirmBtn.classList.replace('btn-success', 'btn-secondary');
+                inputsToLock.forEach(input => input.disabled = true);
+            }
+        });
+
         tr.querySelector('.remove-btn').addEventListener('click', () => {
             tr.remove();
             if (document.querySelectorAll('.owned-tip-row').length === 0 && emptyTipsRow) {
@@ -116,6 +144,11 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     });
+
+    // Handle CSV loaded rows confirmation simulation
+    function triggerConfirm(tr) {
+        tr.querySelector('.confirm-btn').click();
+    }
 
     // --- Form Submission / Gathering Data ---
     ladderForm.addEventListener('submit', (e) => {
@@ -138,20 +171,26 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         document.querySelectorAll('.owned-tip-row').forEach(row => {
-            payload.owned_tips.push({
-                id_type: row.querySelector('.tip-id-type').value,
-                id_value: row.querySelector('.tip-id-value').value,
-                account_type: row.querySelector('.tip-account-type').value,
-                quantity: parseInt(row.querySelector('.tip-quantity').value, 10)
-            });
+            // Only add tips that are confirmed
+            if (row.classList.contains('confirmed')) {
+                payload.owned_tips.push({
+                    id_type: row.querySelector('.tip-id-type').value,
+                    id_value: row.querySelector('.tip-id-value').value,
+                    account_type: row.querySelector('.tip-account-type').value,
+                    quantity: parseInt(row.querySelector('.tip-quantity').value, 10)
+                });
+            }
         });
 
         ladderDataInput.value = JSON.stringify(payload);
         ladderForm.submit();
     });
 
+    // --- File Session Tracking ---
+    let currentFileHandle = null;
+
     // --- CSV Save functionality ---
-    saveCsvBtn.addEventListener('click', () => {
+    saveCsvBtn.addEventListener('click', async () => {
         let csvContent = "Type,Field1,Field2,Field3,Field4\n";
 
         csvContent += `PARAM,tax_rate,${document.getElementById('taxRate').value},,\n`;
@@ -166,23 +205,64 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         document.querySelectorAll('.owned-tip-row').forEach(row => {
-            const t = row.querySelector('.tip-id-type').value;
-            const v = row.querySelector('.tip-id-value').value;
-            const a = row.querySelector('.tip-account-type').value;
-            const q = row.querySelector('.tip-quantity').value;
-            // Escape values just in case
-            const safeV = v.includes(',') ? `"${v}"` : v;
-            csvContent += `OWNED_TIP,${t},${safeV},${a},${q}\n`;
+            if (row.classList.contains('confirmed')) {
+                const t = row.querySelector('.tip-id-type').value;
+                const v = row.querySelector('.tip-id-value').value;
+                const a = row.querySelector('.tip-account-type').value;
+                const q = row.querySelector('.tip-quantity').value;
+                // Escape values just in case
+                const safeV = v.includes(',') ? `"${v}"` : v;
+                csvContent += `OWNED_TIP,${t},${safeV},${a},${q}\n`;
+            }
         });
 
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'ladder_config.csv';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+        // Use modern File System Access API if supported
+        if ('showSaveFilePicker' in window) {
+            try {
+                if (currentFileHandle) {
+                    const wantOverwrite = confirm(`Overwrite ${currentFileHandle.name}?\nClick OK to overwrite, or Cancel to specify a new filename and location.`);
+                    if (!wantOverwrite) {
+                        currentFileHandle = await window.showSaveFilePicker({
+                            suggestedName: currentFileHandle.name,
+                            startIn: 'downloads',
+                            types: [{
+                                description: 'CSV Files',
+                                accept: { 'text/csv': ['.csv'] }
+                            }],
+                        });
+                    }
+                } else {
+                    currentFileHandle = await window.showSaveFilePicker({
+                        suggestedName: 'ladder_config.csv',
+                        startIn: 'downloads',
+                        types: [{
+                            description: 'CSV Files',
+                            accept: { 'text/csv': ['.csv'] }
+                        }],
+                    });
+                }
+                
+                const writable = await currentFileHandle.createWritable();
+                await writable.write(csvContent);
+                await writable.close();
+                
+            } catch (err) {
+                // User may have cancelled the dialog (AbortError)
+                if (err.name !== 'AbortError') {
+                    console.error('File save error:', err);
+                }
+            }
+        } else {
+            // Fallback for older browsers
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'ladder_config.csv';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
     });
 
     // --- CSV Load functionality ---
@@ -255,6 +335,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                     created.querySelector('.tip-account-type').value = vals[3];
                     created.querySelector('.tip-quantity').value = vals[4];
+                    triggerConfirm(created);
                 }
             }
         };
@@ -263,4 +344,56 @@ document.addEventListener('DOMContentLoaded', function () {
         // Reset file input so same file can be loaded again if needed
         loadCsvBtn.value = '';
     });
+
+    // --- Load Saved Session Data ---
+    const savedDataElement = document.getElementById('saved-ladder-data');
+    if (savedDataElement && savedDataElement.textContent && savedDataElement.textContent !== "{}") {
+        try {
+            const savedData = JSON.parse(savedDataElement.textContent);
+            
+            if (savedData.tax_rate !== undefined) document.getElementById('taxRate').value = savedData.tax_rate;
+            if (savedData.start_year !== undefined) document.getElementById('startYear').value = savedData.start_year;
+            if (savedData.end_year !== undefined) document.getElementById('endYear').value = savedData.end_year;
+            if (savedData.base_cash_flow !== undefined) document.getElementById('baseCashFlow').value = savedData.base_cash_flow;
+
+            if (savedData.additional_flows && Array.isArray(savedData.additional_flows)) {
+                savedData.additional_flows.forEach(flow => {
+                    addCashFlowBtn.click();
+                    const created = additionalCashFlowsContainer.lastElementChild;
+                    created.querySelector('.flow-year').value = flow.year;
+                    created.querySelector('.flow-amount').value = flow.amount;
+                });
+            }
+
+            if (savedData.owned_tips && Array.isArray(savedData.owned_tips)) {
+                // Ensure tips are loaded to populate selection boxes first
+                setTimeout(() => {
+                    savedData.owned_tips.forEach(tip => {
+                        addOwnedTipBtn.click();
+                        const created = ownedTipsTbody.lastElementChild;
+                        const typeSelect = created.querySelector('.tip-id-type');
+                        const valueSelect = created.querySelector('.tip-id-value');
+                        
+                        typeSelect.value = tip.id_type;
+                        populateDropdown(valueSelect, tip.id_type, tip.id_value);
+                        
+                        // Fallback in case value isn't found in options
+                        if (valueSelect.value !== tip.id_value) {
+                            const opt = document.createElement('option');
+                            opt.value = tip.id_value;
+                            opt.textContent = tip.id_value + ' (Loaded)';
+                            valueSelect.appendChild(opt);
+                            valueSelect.value = tip.id_value;
+                        }
+
+                        created.querySelector('.tip-account-type').value = tip.account_type;
+                        created.querySelector('.tip-quantity').value = tip.quantity;
+                        triggerConfirm(created);
+                    });
+                }, 50); // slight delay to guarantee tipsData has been parsed natively
+            }
+        } catch (e) {
+            console.error("Failed to parse saved ladder data", e);
+        }
+    }
 });

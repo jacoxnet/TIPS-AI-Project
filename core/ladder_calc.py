@@ -7,7 +7,7 @@ def get_tip_details(id_type, id_value):
     id_type: 'cusip' or 'coupon_maturity'
     """
     url = "https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v1/accounting/od/tips_cpi_data_summary"
-    params = {"page[size]": 1, "sort": "-record_date"}
+    params = {"page[size]": 1, "sort": "-maturity_date"}
     
     if id_type == 'cusip':
         params["filter"] = f"cusip:eq:{id_value.strip()}"
@@ -51,7 +51,9 @@ def calculate_ladder(ladder_data_json):
         if details:
             try:
                 mat_year = int(details['maturity_date'].split('-')[0])
-                rate = float(details['interest_rate']) / 100.0
+                # Ensure parsing string like 0.125 or 0.125%
+                rate_str = str(details['interest_rate']).replace('%', '')
+                rate = float(rate_str) / 100.0
                 owned_tips.append({
                     'maturity_year': mat_year,
                     'interest_rate': rate,

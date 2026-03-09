@@ -98,6 +98,7 @@
 {% endblock %}
 
 {% block extra_js %}
-{{ tips_data_json|safe|json_script:"tips-data" }}
+{{ tips_data_json|json_script:"tips-data" }}
+{{ saved_ladder_data|json_script:"saved-ladder-data" }}
 <script src="{% static 'js/data_entry.js' %}"></script>
 {% endblock %}
