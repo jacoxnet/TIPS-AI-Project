@@ -1,58 +1,47 @@
 import json
 import requests
+from core.tipsdata import Tips, Ladder_values
 
 def get_tip_details(id_type, id_value):
     """
-    Fetches details for a specific TIP from Fiscal Data API.
-    id_type: 'cusip' or 'coupon_maturity'
+    Searches Tips.all_tips for a specific TIP based on either cusip or a combination of interest_rate 
+    and maturity_date. id_type: 'cusip' or 'coupon_maturity'
     """
-    url = "https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v1/accounting/od/tips_cpi_data_summary"
-    params = {"page[size]": 1, "sort": "-maturity_date"}
-    
-    if id_type == 'cusip':
-        params["filter"] = f"cusip:eq:{id_value.strip()}"
-    else:
-        # Parse '2.5%,2030-01-15' or similar
-        try:
-            parts = id_value.split(',')
-            rate = float(parts[0].replace('%', '').strip())
-            maturity = parts[1].strip()
-            # The API stores interest_rate as a string, e.g. '0.125' for 0.125%. Let's query exactly.
-            params["filter"] = f"interest_rate:eq:{rate},maturity_date:eq:{maturity}"
-        except:
-            return None
-            
-    try:
-        resp = requests.get(url, params=params, timeout=5)
-        resp.raise_for_status()
-        data = resp.json().get('data', [])
-        if data:
-            return data[0]
-        return None
-    except:
-        return None
+    for tip in Tips.all_tips:
+        if id_type == 'cusip':
+            if tip.cusip == id_value:
+                return tip
+        else:
+            # Parse '2.5%,2030-01-15' or similar
+            try:
+                parts = id_value.split(',')
+                rate = float(parts[0].replace('%', '').strip())
+                maturity = parts[1].strip()
+                if float(tip.interest_rate) == rate and tip.maturity_date == maturity:
+                    return tip
+            except:
+                continue
+    return None
 
-def calculate_ladder(ladder_data_json):
-    try:
-        data = json.loads(ladder_data_json)
-    except:
-        raise ValueError("Invalid configuration data.")
+def calculate_ladder():
         
-    tax_rate = float(data.get('tax_rate', 0)) / 100.0
-    start_year = int(data.get('start_year'))
-    end_year = int(data.get('end_year'))
-    base_cash_flow = float(data.get('base_cash_flow', 0))
-    additional_flows = {int(f['year']): float(f['amount']) for f in data.get('additional_flows', [])}
+    tax_rate = float(Ladder_values.tax_rate) / 100.0
+    start_year = int(Ladder_values.start_year)
+    end_year = int(Ladder_values.end_year)
+    base_cash_flow = float(Ladder_values.base_cash_flow)
+    additional_flows = {int(f['year']): float(f['amount']) for f in Ladder_values.additional_flows}
     
     owned_tips = []
     # Fetch specifics for all owned TIPS to ensure we have maturity_date & interest_rate
-    for tip in data.get('owned_tips', []):
+    for tip in Ladder_values.owned_tips:
+        print(f"Fetching details for TIP: {tip['id_type']}={tip['id_value']}")
         details = get_tip_details(tip['id_type'], tip['id_value'])
         if details:
             try:
-                mat_year = int(details['maturity_date'].split('-')[0])
+                print(f"Details found: {details}")
+                mat_year = int(details.maturity_date.split('-')[0])
                 # Ensure parsing string like 0.125 or 0.125%
-                rate_str = str(details['interest_rate']).replace('%', '')
+                rate_str = str(details.interest_rate).replace('%', '')
                 rate = float(rate_str) / 100.0
                 owned_tips.append({
                     'maturity_year': mat_year,
@@ -62,7 +51,10 @@ def calculate_ladder(ladder_data_json):
                 })
             except Exception as e:
                 pass # Skip improperly formatted tips for calculation
+        else:
+            print(f"No details found for {tip['id_type']}={tip['id_value']}")
     
+    print(f"Fetched details for {len(owned_tips)} owned TIPS.")
     ladder_years = []
     for y in range(start_year, end_year + 1):
         target = base_cash_flow + additional_flows.get(y, 0)

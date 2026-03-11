@@ -45,3 +45,4 @@ OWNED_TIP,coupon_maturity,"2.125%,2054-02-15",taxable,11
 OWNED_TIP,coupon_maturity,"2.125%,2054-02-15",roth,23
 OWNED_TIP,coupon_maturity,"2.375%,2055-02-15",taxable,33
 OWNED_TIP,coupon_maturity,"2.375%,2055-02-15",pretax,2
+OWNED_TIP,cusip,9128987D6,roth,1
