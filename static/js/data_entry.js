@@ -219,28 +219,15 @@ document.addEventListener('DOMContentLoaded', function () {
         // Use modern File System Access API if supported
         if ('showSaveFilePicker' in window) {
             try {
-                if (currentFileHandle) {
-                    const wantOverwrite = confirm(`Overwrite ${currentFileHandle.name}?\nClick OK to overwrite, or Cancel to specify a new filename and location.`);
-                    if (!wantOverwrite) {
-                        currentFileHandle = await window.showSaveFilePicker({
-                            suggestedName: currentFileHandle.name,
-                            startIn: 'downloads',
-                            types: [{
-                                description: 'CSV Files',
-                                accept: { 'text/csv': ['.csv'] }
-                            }],
-                        });
-                    }
-                } else {
-                    currentFileHandle = await window.showSaveFilePicker({
-                        suggestedName: 'ladder_config.csv',
-                        startIn: 'downloads',
-                        types: [{
-                            description: 'CSV Files',
-                            accept: { 'text/csv': ['.csv'] }
-                        }],
-                    });
-                }
+                const suggestedName = currentFileHandle ? currentFileHandle.name : 'ladder_config.csv';
+                currentFileHandle = await window.showSaveFilePicker({
+                    suggestedName,
+                    startIn: 'downloads',
+                    types: [{
+                        description: 'CSV Files',
+                        accept: { 'text/csv': ['.csv'] }
+                    }],
+                });
                 
                 const writable = await currentFileHandle.createWritable();
                 await writable.write(csvContent);

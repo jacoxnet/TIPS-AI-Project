@@ -1,0 +1,9 @@
+Type,Field1,Field2,Field3,Field4
+PARAM,tax_rate,24,,
+PARAM,start_year,2026,,
+PARAM,end_year,2055,,
+PARAM,base_cash_flow,50000,,
+ADD_FLOW,2030,30000,,
+OWNED_TIP,coupon_maturity,"0.125000%,2031-07-15",roth,25
+OWNED_TIP,coupon_maturity,"1.375000%,2033-07-15",pretax,15
+OWNED_TIP,cusip,912810SM1,taxable,5
