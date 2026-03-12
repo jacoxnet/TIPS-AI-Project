@@ -13,7 +13,6 @@ def data_entry_view(request):
     fetch_tips_data()
     # create list of dicts of tips for json serialization
     tips_data = [tip.return_dict() for tip in Tips.all_tips]
-    print("In data_entry_view Ladder_values:", Ladder_values.to_dict())
     ladder_data = Ladder_values.to_dict()
     return render(request, 'data_entry.html', {
         'tips_data': tips_data,
@@ -33,11 +32,15 @@ def ladder_display_view(request):
             Ladder_values.additional_flows = json.loads(ladder_data).get('additional_flows', [])
             Ladder_values.owned_tips = json.loads(ladder_data).get('owned_tips', [])
             try:
-                print("In ladder_display_view Ladder_values:", Ladder_values.to_dict())
                 results = calculate_ladder()
                 context['ladder_years'] = results
             except Exception as e:
                 context['error'] = str(e)
         else:
             context['error'] = 'No ladder data provided.'
+    else:
+        # test for persisting ladder data - calculate ladder if data there
+        if Ladder_values.start_year != 0:
+            results = calculate_ladder()
+            context['ladder_years'] = results
     return render(request, 'ladder_display.html', context)

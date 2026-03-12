@@ -43,6 +43,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const saveCsvBtn = document.getElementById('saveCsvBtn');
     const loadCsvBtn = document.getElementById('loadCsvBtn');
+    const clearLadderBtn = document.getElementById('clearLadderBtn');
 
     // --- Dynamic Additional Cash Flows ---
     addCashFlowBtn.addEventListener('click', () => {
@@ -251,6 +252,22 @@ document.addEventListener('DOMContentLoaded', function () {
             document.body.removeChild(a);
         }
     });
+
+    // --- Clear Ladder Data functionality ---
+    if (clearLadderBtn) {
+        clearLadderBtn.addEventListener('click', () => {
+            if (confirm("Are you sure you want to clear all ladder data?")) {
+                document.getElementById('taxRate').value = '';
+                document.getElementById('startYear').value = '';
+                document.getElementById('endYear').value = '';
+                document.getElementById('baseCashFlow').value = '';
+                
+                additionalCashFlowsContainer.innerHTML = '';
+                document.querySelectorAll('.owned-tip-row').forEach(r => r.remove());
+                if (emptyTipsRow) emptyTipsRow.style.display = 'table-row';
+            }
+        });
+    }
 
     // --- CSV Load functionality ---
     loadCsvBtn.addEventListener('change', (e) => {
