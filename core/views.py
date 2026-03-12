@@ -30,7 +30,7 @@ def ladder_display_view(request):
             Ladder_values.start_year = json.loads(ladder_data).get('start_year', 0)
             Ladder_values.end_year = json.loads(ladder_data).get('end_year', 0)
             Ladder_values.base_cash_flow = json.loads(ladder_data).get('base_cash_flow', 0)
-            Ladder_values.additional_flows = json.loads(ladder_data).get('additional_flows', {})
+            Ladder_values.additional_flows = json.loads(ladder_data).get('additional_flows', [])
             Ladder_values.owned_tips = json.loads(ladder_data).get('owned_tips', [])
             try:
                 print("In ladder_display_view Ladder_values:", Ladder_values.to_dict())

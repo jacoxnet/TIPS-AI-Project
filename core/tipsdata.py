@@ -22,13 +22,13 @@ class Ladder_values:
     start_year = 0
     end_year = 0
     base_cash_flow = 0
-    additional_flows = {}
+    additional_flows = []
     owned_tips = []
     
     # implement a static method for JSON serializer for this class
     @staticmethod
     def to_dict():
-        if Ladder_values.tax_rate == 0:
+        if Ladder_values.start_year == 0:
             return {}
         else:
             return {
@@ -38,6 +38,6 @@ class Ladder_values:
                 'base_cash_flow': Ladder_values.base_cash_flow,
                 'additional_flows': Ladder_values.additional_flows,
                 # owned_tips is list of objects with attrib id_type, id_value, quantity, account_type
-                'owned_tips': []
+                'owned_tips': Ladder_values.owned_tips
             }
     

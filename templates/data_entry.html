@@ -99,7 +99,6 @@
 
 {% block extra_js %}
 {{ tips_data|json_script:"tips-data" }}
-{{ owned_tips|json_script:"owned-tips" }}
-{{ ladder_values|json_script:"ladder-values" }}
+{{ ladder_data|json_script:"saved-ladder-data" }}
 <script src="{% static 'js/data_entry.js' %}"></script>
 {% endblock %}
