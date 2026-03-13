@@ -1,38 +1,56 @@
 import json
+from django.http import HttpResponseRedirect
+from django.urls import reverse
 from django.shortcuts import render
 from .fetch import fetch_tips_data
 from .ladder_calc import calculate_ladder
-from core.tipsdata import Ladder_values, Tips
+from .tipsdata import Ladder_values, Tips
+from .tinit import clear_data
+
+def init_view(request):
+    print('DEBUG: starting app init view')
+    clear_data(request)
+    request.session['insession'] = True
+    return HttpResponseRedirect(reverse('home'))
 
 def home_view(request):
+    print("DEBUG: starting app home view")
+    if not request.session.get('insession', False):
+        return HttpResponseRedirect(reverse(''))    
+    # fetch tips data at put it in Tips.all_tips
     fetch_tips_data()
-    print (f"Download date: {Tips.download_date}, Number of TIPS: {len(Tips.all_tips)}")
-    return render(request, 'home.html', {'tips_data': Tips.all_tips, 'tips_date': Tips.download_date})
+    print (f"DEBUG: Download date: {Tips.download_date}, Number of TIPS: {len(Tips.all_tips)}")
+    # create list of dicts of tips for json serialization
+    tips_data = [tip.to_json() for tip in Tips.all_tips]
+    return render(request, 'home.html', {
+        'tips_data': tips_data, 'tips_date': Tips.download_date})
 
 def data_entry_view(request):
+    print("DEBUG: starting app data_entry view")
     fetch_tips_data()
     # create list of dicts of tips for json serialization
-    tips_data = [tip.return_dict() for tip in Tips.all_tips]
-    ladder_data = Ladder_values.to_dict()
+    tips_data = [tip.to_json() for tip in Tips.all_tips]
+    ladder_data = request.session.get('ladder_data', None)
+    ladderp = Ladder_values().from_json(ladder_data)
+    ladder_data2 = ladderp.to_json()
+    print(f"DEBUG data entry ladder data from session {ladder_data2}")
     return render(request, 'data_entry.html', {
         'tips_data': tips_data,
-        'ladder_data': ladder_data
+        'ladder_data': ladder_data2
     })
 
 def ladder_display_view(request):
     context = {}
     if request.method == 'POST':
         ladder_data = request.POST.get('ladder_data')
+        print(f"DEBUG ladder data {ladder_data}")
         if ladder_data:
-            # Save to class variable for persistence when returning
-            Ladder_values.tax_rate = json.loads(ladder_data).get('tax_rate', 0)
-            Ladder_values.start_year = json.loads(ladder_data).get('start_year', 0)
-            Ladder_values.end_year = json.loads(ladder_data).get('end_year', 0)
-            Ladder_values.base_cash_flow = json.loads(ladder_data).get('base_cash_flow', 0)
-            Ladder_values.additional_flows = json.loads(ladder_data).get('additional_flows', [])
-            Ladder_values.owned_tips = json.loads(ladder_data).get('owned_tips', [])
+            # Save to session for persistence when returning
+            request.session['ladder_data'] = ladder_data
+            ladderp = Ladder_values().from_json(ladder_data)
+            print(f"DEBUG ladderp {ladderp}")
             try:
-                results = calculate_ladder()
+                results = calculate_ladder(ladderp)
                 context['ladder_years'] = results
             except Exception as e:
                 context['error'] = str(e)
@@ -40,7 +58,11 @@ def ladder_display_view(request):
             context['error'] = 'No ladder data provided.'
     else:
         # test for persisting ladder data - calculate ladder if data there
-        if Ladder_values.start_year != 0:
-            results = calculate_ladder()
+        ladder_data = request.session.get('ladder_data')
+        ladderp = Ladder_values().from_json(ladder_data)
+        if ladderp.start_year != 0:
+            results = calculate_ladder(ladderp)
             context['ladder_years'] = results
+        else:
+            context = []
     return render(request, 'ladder_display.html', context)

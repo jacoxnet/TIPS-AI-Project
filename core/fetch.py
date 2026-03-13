@@ -13,9 +13,9 @@ def fetch_tips_data():
 
     # if already downloaded for today, don't do anything
     if Tips.download_date == datetime.date.today().isoformat():
-        print (f"TIPS data already downloaded for today ({Tips.download_date}). Skipping fetch.")
+        print (f"DEBUG: TIPS data already downloaded for today ({Tips.download_date}). Skipping fetch.")
         return
-    
+    Tips.all_tips = []
     url = "https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v1/accounting/od/tips_cpi_data_summary"
     params = {
         "page[size]": 100,
@@ -43,7 +43,8 @@ def fetch_tips_data():
             )
             Tips.all_tips.append(tips)
             seen_cusips.add(cusip)
-            
+    print(f"DEBUG Fetched {len(Tips.all_tips)} tips")
+    # print(f"DEBUG Tips: {[tip.to_dict() for tip in Tips.all_tips]}")
     try:
         # Fetch detailed data for the current date to get index ratios
         today = datetime.date.today().isoformat()
@@ -60,6 +61,7 @@ def fetch_tips_data():
     
     # Create a mapping from CUSIP to index_ratio
     index_ratios = {item.get('cusip'): item.get('index_ratio') for item in detail_data if item.get('cusip')}
+    print(f"DEBUG fetched {len(index_ratios)} index ratios")
     
     # Assign index_ratio to each tip
     for tip in Tips.all_tips:
@@ -69,6 +71,6 @@ def fetch_tips_data():
     Tips.all_tips.sort(key=lambda x: x.maturity_date)
     
     Tips.download_date = datetime.date.today().isoformat()
-    print(f"Fetched {len(Tips.all_tips)} TIPS with index ratios. Download date: {Tips.download_date}")
+    
     return
 

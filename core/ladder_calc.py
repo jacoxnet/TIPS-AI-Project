@@ -23,17 +23,17 @@ def get_tip_details(id_type, id_value):
                 continue
     return None
 
-def calculate_ladder():
+def calculate_ladder(ladderp):
         
-    tax_rate = float(Ladder_values.tax_rate) / 100.0
-    start_year = int(Ladder_values.start_year)
-    end_year = int(Ladder_values.end_year)
-    base_cash_flow = float(Ladder_values.base_cash_flow)
-    additional_flows = {int(f['year']): float(f['amount']) for f in Ladder_values.additional_flows}
+    tax_rate = float(ladderp.tax_rate) / 100.0
+    start_year = int(ladderp.start_year)
+    end_year = int(ladderp.end_year)
+    base_cash_flow = float(ladderp.base_cash_flow)
+    additional_flows = {int(f['year']): float(f['amount']) for f in ladderp.additional_flows}
     
     owned_tips = []
     # Fetch specifics for all owned TIPS to ensure we have maturity_date, interest_rate and inflation_adjusted_value
-    for tip in Ladder_values.owned_tips:
+    for tip in ladderp.owned_tips:
         print(f"Fetching details for TIP: {tip['id_type']}={tip['id_value']}")
         details = get_tip_details(tip['id_type'], tip['id_value'])
         if details:
@@ -95,9 +95,6 @@ def calculate_ladder():
         row['net_flow'] = row['coupon_income'] + row['principal_income'] - row['tax_drag']
         row['shortfall'] = row['target'] - row['net_flow']
         row['balance'] = row['net_flow'] - row['target']
-        # test printouts
-        if y == 2028:
-            print ("Spreadsheet equivalent coupon income", )
         ladder_years.append(row)
         
     return ladder_years
