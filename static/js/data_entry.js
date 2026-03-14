@@ -369,46 +369,49 @@ document.addEventListener('DOMContentLoaded', function () {
         try {
             const savedData = JSON.parse(savedDataElement.textContent);
 
-            if (savedData.tax_rate !== undefined) document.getElementById('taxRate').value = savedData.tax_rate;
-            if (savedData.start_year !== undefined) document.getElementById('startYear').value = savedData.start_year;
-            if (savedData.end_year !== undefined) document.getElementById('endYear').value = savedData.end_year;
-            if (savedData.base_cash_flow !== undefined) document.getElementById('baseCashFlow').value = savedData.base_cash_flow;
+            if ((savedData.start_year !== undefined) && (savedData.start_year !== 0)) {
 
-            if (savedData.additional_flows && Array.isArray(savedData.additional_flows)) {
-                savedData.additional_flows.forEach(flow => {
-                    addCashFlowBtn.click();
-                    const created = additionalCashFlowsContainer.lastElementChild;
-                    created.querySelector('.flow-year').value = flow.year;
-                    created.querySelector('.flow-amount').value = flow.amount;
-                });
-            }
+                if (savedData.tax_rate !== undefined) document.getElementById('taxRate').value = savedData.tax_rate;
+                if (savedData.start_year !== undefined) document.getElementById('startYear').value = savedData.start_year;
+                if (savedData.end_year !== undefined) document.getElementById('endYear').value = savedData.end_year;
+                if (savedData.base_cash_flow !== undefined) document.getElementById('baseCashFlow').value = savedData.base_cash_flow;
 
-            if (savedData.owned_tips && Array.isArray(savedData.owned_tips)) {
-                // Ensure tips are loaded to populate selection boxes first
-                setTimeout(() => {
-                    savedData.owned_tips.forEach(tip => {
-                        addOwnedTipBtn.click();
-                        const created = ownedTipsTbody.lastElementChild;
-                        const typeSelect = created.querySelector('.tip-id-type');
-                        const valueSelect = created.querySelector('.tip-id-value');
-
-                        typeSelect.value = tip.id_type;
-                        populateDropdown(valueSelect, tip.id_type, tip.id_value);
-
-                        // Fallback in case value isn't found in options
-                        if (valueSelect.value !== tip.id_value) {
-                            const opt = document.createElement('option');
-                            opt.value = tip.id_value;
-                            opt.textContent = tip.id_value + ' (Loaded)';
-                            valueSelect.appendChild(opt);
-                            valueSelect.value = tip.id_value;
-                        }
-
-                        created.querySelector('.tip-account-type').value = tip.account_type;
-                        created.querySelector('.tip-quantity').value = tip.quantity;
-                        triggerConfirm(created);
+                if (savedData.additional_flows && Array.isArray(savedData.additional_flows)) {
+                    savedData.additional_flows.forEach(flow => {
+                        addCashFlowBtn.click();
+                        const created = additionalCashFlowsContainer.lastElementChild;
+                        created.querySelector('.flow-year').value = flow.year;
+                        created.querySelector('.flow-amount').value = flow.amount;
                     });
-                }, 50); // slight delay to guarantee tipsData has been parsed natively
+                }
+
+                if (savedData.owned_tips && Array.isArray(savedData.owned_tips)) {
+                    // Ensure tips are loaded to populate selection boxes first
+                    setTimeout(() => {
+                        savedData.owned_tips.forEach(tip => {
+                            addOwnedTipBtn.click();
+                            const created = ownedTipsTbody.lastElementChild;
+                            const typeSelect = created.querySelector('.tip-id-type');
+                            const valueSelect = created.querySelector('.tip-id-value');
+
+                            typeSelect.value = tip.id_type;
+                            populateDropdown(valueSelect, tip.id_type, tip.id_value);
+
+                            // Fallback in case value isn't found in options
+                            if (valueSelect.value !== tip.id_value) {
+                                const opt = document.createElement('option');
+                                opt.value = tip.id_value;
+                                opt.textContent = tip.id_value + ' (Loaded)';
+                                valueSelect.appendChild(opt);
+                                valueSelect.value = tip.id_value;
+                            }
+
+                            created.querySelector('.tip-account-type').value = tip.account_type;
+                            created.querySelector('.tip-quantity').value = tip.quantity;
+                            triggerConfirm(created);
+                        });
+                    }, 50); // slight delay to guarantee tipsData has been parsed natively
+                }
             }
         } catch (e) {
             console.error("Failed to parse saved ladder data", e);
