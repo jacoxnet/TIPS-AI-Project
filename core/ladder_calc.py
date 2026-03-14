@@ -43,7 +43,11 @@ def calculate_ladder(ladderp):
                 # Ensure parsing string like 0.125 or 0.125%
                 rate_str = str(details.interest_rate).replace('%', '')
                 rate = float(rate_str) / 100.0
-                inflation_adjusted_value = float(details.index_ratio) * 1000.0
+                # account for index_ratio not retrieved
+                try:
+                    inflation_adjusted_value = float(details.index_ratio) * 1000.0
+                except ValueError:
+                    inflation_adjusted_value = 1000.0
                 owned_tips.append({
                     'maturity_year': mat_year,
                     'interest_rate': rate,
