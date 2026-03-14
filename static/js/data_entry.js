@@ -54,7 +54,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 <input type="number" class="flow-year" placeholder="Year (e.g., 2030)" required>
             </div>
             <div style="flex:1;">
-                <input type="number" class="flow-amount" placeholder="Additional Amount ($)" step="100" required>
+                <input type="number" class="flow-amount" placeholder="Amount ($)" step="100" required>
             </div>
             <button type="button" class="btn btn-danger btn-sm remove-btn">Remove</button>
         `;
@@ -113,16 +113,16 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const inputsToLock = [idTypeSelect, idValueSelect, tr.querySelector('.tip-account-type'), tr.querySelector('.tip-quantity')];
         const confirmBtn = tr.querySelector('.confirm-btn');
-        
+
         confirmBtn.addEventListener('click', () => {
             // Basic HTML5 Validity Check on inputs before locking
             const isValid = inputsToLock.every(input => input.checkValidity());
             if (!isValid) {
                 // Trigger natural validation warnings
                 inputsToLock.forEach(input => input.reportValidity());
-                return; 
+                return;
             }
-            
+
             if (tr.classList.contains('confirmed')) {
                 // Edit Mode: Unlock
                 tr.classList.remove('confirmed');
@@ -229,11 +229,11 @@ document.addEventListener('DOMContentLoaded', function () {
                         accept: { 'text/csv': ['.csv'] }
                     }],
                 });
-                
+
                 const writable = await currentFileHandle.createWritable();
                 await writable.write(csvContent);
                 await writable.close();
-                
+
             } catch (err) {
                 // User may have cancelled the dialog (AbortError)
                 if (err.name !== 'AbortError') {
@@ -261,10 +261,24 @@ document.addEventListener('DOMContentLoaded', function () {
                 document.getElementById('startYear').value = '';
                 document.getElementById('endYear').value = '';
                 document.getElementById('baseCashFlow').value = '';
-                
+
                 additionalCashFlowsContainer.innerHTML = '';
                 document.querySelectorAll('.owned-tip-row').forEach(r => r.remove());
                 if (emptyTipsRow) emptyTipsRow.style.display = 'table-row';
+
+                // Submit empty payload to clear session data on backend
+                const emptyPayload = {
+                    tax_rate: 0,
+                    start_year: 0,
+                    end_year: 0,
+                    base_cash_flow: 0,
+                    additional_flows: [],
+                    owned_tips: []
+                };
+                ladderDataInput.value = JSON.stringify(emptyPayload);
+                // Dispatch a submit event so the event listener handles the form submission properly
+                // ladderForm.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+                ladderForm.submit()
             }
         });
     }
@@ -324,10 +338,10 @@ document.addEventListener('DOMContentLoaded', function () {
                     const created = ownedTipsTbody.lastElementChild;
                     const typeSelect = created.querySelector('.tip-id-type');
                     const valueSelect = created.querySelector('.tip-id-value');
-                    
+
                     typeSelect.value = vals[1];
                     populateDropdown(valueSelect, vals[1], vals[2]);
-                    
+
                     // Fallback in case value isn't found in options
                     if (valueSelect.value !== vals[2]) {
                         const opt = document.createElement('option');
@@ -354,7 +368,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (savedDataElement && savedDataElement.textContent && savedDataElement.textContent !== "{}") {
         try {
             const savedData = JSON.parse(savedDataElement.textContent);
-            
+
             if (savedData.tax_rate !== undefined) document.getElementById('taxRate').value = savedData.tax_rate;
             if (savedData.start_year !== undefined) document.getElementById('startYear').value = savedData.start_year;
             if (savedData.end_year !== undefined) document.getElementById('endYear').value = savedData.end_year;
@@ -377,10 +391,10 @@ document.addEventListener('DOMContentLoaded', function () {
                         const created = ownedTipsTbody.lastElementChild;
                         const typeSelect = created.querySelector('.tip-id-type');
                         const valueSelect = created.querySelector('.tip-id-value');
-                        
+
                         typeSelect.value = tip.id_type;
                         populateDropdown(valueSelect, tip.id_type, tip.id_value);
-                        
+
                         // Fallback in case value isn't found in options
                         if (valueSelect.value !== tip.id_value) {
                             const opt = document.createElement('option');

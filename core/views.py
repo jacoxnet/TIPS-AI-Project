@@ -43,26 +43,32 @@ def ladder_display_view(request):
     context = {}
     if request.method == 'POST':
         ladder_data = request.POST.get('ladder_data')
-        print(f"DEBUG ladder data {ladder_data}")
+        print(f"DEBUG display view ladder data {ladder_data}")
         if ladder_data:
-            # Save to session for persistence when returning
-            request.session['ladder_data'] = ladder_data
             ladderp = Ladder_values().from_json(ladder_data)
-            print(f"DEBUG ladderp {ladderp}")
-            try:
-                results = calculate_ladder(ladderp)
-                context['ladder_years'] = results
-            except Exception as e:
-                context['error'] = str(e)
+            print(f"DEBUG display view ladderp {ladderp}")
+            
+            # If the payload indicates clearing data (start_year == 0)
+            if ladderp.start_year == 0:
+                if 'ladder_data' in request.session:
+                    del request.session['ladder_data']
+                context = {}
+            else:
+                # Save to session for persistence when returning
+                request.session['ladder_data'] = ladder_data
+                try:
+                    results = calculate_ladder(ladderp)
+                    context['ladder_years'] = results
+                except Exception as e:
+                    context['error'] = str(e)
         else:
             context['error'] = 'No ladder data provided.'
     else:
         # test for persisting ladder data - calculate ladder if data there
         ladder_data = request.session.get('ladder_data')
-        ladderp = Ladder_values().from_json(ladder_data)
-        if ladderp.start_year != 0:
-            results = calculate_ladder(ladderp)
-            context['ladder_years'] = results
-        else:
-            context = []
+        if ladder_data:
+            ladderp = Ladder_values().from_json(ladder_data)
+            if ladderp.start_year != 0:
+                results = calculate_ladder(ladderp)
+                context['ladder_years'] = results
     return render(request, 'ladder_display.html', context)

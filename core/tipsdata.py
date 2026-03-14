@@ -39,28 +39,28 @@ class Ladder_values:
 
     # JSON serializer for this class
     def to_json(self):
-        if self.start_year == 0:
-            return '{}'
-        else:
-            return {
-                'tax_rate': self.tax_rate,
-                'start_year': self.start_year,
-                'end_year': self.end_year,
-                'base_cash_flow': self.base_cash_flow,
-                'additional_flows': self.additional_flows,
-                'owned_tips': self.owned_tips
-            }
-        
+        return {
+            'tax_rate': self.tax_rate,
+            'start_year': self.start_year,
+            'end_year': self.end_year,
+            'base_cash_flow': self.base_cash_flow,
+            'additional_flows': self.additional_flows,
+            'owned_tips': self.owned_tips
+        }
+    
     def from_json(self, jsondata):
-        pdata = json.loads(jsondata)
-        print(f"DEBUG from dict pdata {pdata}")
+        if not jsondata:
+            pdata = {}
+        else:
+            pdata = json.loads(jsondata)
         self.tax_rate = pdata.get('tax_rate', 0)
         self.start_year = pdata.get('start_year', 0)
         self.end_year = pdata.get('end_year', 0)
         self.base_cash_flow = pdata.get('base_cash_flow', 0)
         self.additional_flows = pdata.get('additional_flows', [])
         self.owned_tips = pdata.get('owned_tips', [])
-        print(f"DEBUG from dict self {self}")
+        print(f"DEBUG from json self {self}")
         return self
 
-    
+    def __repr__(self):
+        return f"Ladder_values(tax_rate={self.tax_rate}, start_year={self.start_year}, end_year={self.end_year}, base_cash_flow={self.base_cash_flow}, additional_flows={self.additional_flows}, owned_tips={self.owned_tips})"

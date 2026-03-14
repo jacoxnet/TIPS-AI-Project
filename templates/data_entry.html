@@ -5,15 +5,21 @@
 
 {% block content %}
 <div class="card">
-    <div class="flex justify-between items-center mb-4">
-        <h1>Configure Your TIPS Ladder</h1>
-        <div style="display: grid; grid-template-columns: repeat(3, minmax(130px, 1fr)); gap: 0.5rem;">
-            <button type="button" class="btn btn-secondary btn-sm" id="saveCsvBtn" style="width: 100%;">Save to CSV</button>
-            <label class="btn btn-secondary btn-sm" style="display: flex; justify-content: center; align-items: center; margin: 0; cursor: pointer; width: 100%; text-align: center;">
-                Load from CSV
-                <input type="file" id="loadCsvBtn" accept=".csv" style="display:none;">
-            </label>
-            <button type="button" class="btn btn-danger btn-sm" id="clearLadderBtn" style="width: 100%;">Clear Ladder Data</button>
+    <div class="flex justify-between items-start mb-4">
+        <h1 style="margin-top: 0.25rem;">Configure Your TIPS Ladder</h1>
+        <div style="display: flex; flex-direction: column; gap: 1rem; align-items: flex-end;">
+            <div style="display: grid; grid-template-columns: repeat(3, minmax(130px, 1fr)); gap: 0.5rem;">
+                <button type="button" class="btn btn-secondary btn-sm" id="saveCsvBtn" style="width: 100%;">Save to
+                    CSV</button>
+                <label class="btn btn-secondary btn-sm"
+                    style="display: flex; justify-content: center; align-items: center; margin: 0; cursor: pointer; width: 100%; text-align: center;">
+                    Load from CSV
+                    <input type="file" id="loadCsvBtn" accept=".csv" style="display:none;">
+                </label>
+                <button type="button" class="btn btn-danger btn-sm" id="clearLadderBtn" style="width: 100%;">Clear Ladder
+                    Data</button>
+            </div>
+            <button type="submit" form="ladderForm" class="btn btn-primary" style="font-size: 1.125rem; padding: 1rem 2rem;">Calculate Ladder Output &rarr;</button>
         </div>
     </div>
     <form id="ladderForm" action="{% url 'ladder_display' %}" method="POST">
@@ -40,7 +46,7 @@
                     </div>
                 </div>
                 <div class="form-group">
-                    <label for="baseCashFlow">Desired Base Real Cash Flow ($/Year)</label>
+                    <label for="baseCashFlow">Base Real After-TaxCash Flow ($/Year)</label>
                     <input type="number" id="baseCashFlow" name="base_cash_flow" placeholder="e.g., 50000" step="100"
                         required>
                 </div>
@@ -49,7 +55,7 @@
             <!-- Different Cash Flows -->
             <div>
                 <div class="flex justify-between items-center mb-4" style="margin-top:0;">
-                    <h3 style="margin-bottom:0;">2. One-Time Cash Flow Differences (Optional)</h3>
+                    <h3 style="margin-bottom:0;">2. One-Time After-Tax Cash Flow Differences (Optional)</h3>
                     <button type="button" class="btn btn-secondary btn-sm" id="addCashFlowBtn">+ Add Year</button>
                 </div>
                 <p class="text-secondary" style="font-size:0.875rem; margin-bottom:1rem;">Specify different amounts for
@@ -101,5 +107,5 @@
 {% block extra_js %}
 {{ tips_data|json_script:"tips-data" }}
 {{ ladder_data|json_script:"saved-ladder-data" }}
-<script src="{% static 'js/data_entry.js' %}"></script>
+<script src="{% static 'js/data_entry.js' %}?v=2"></script>
 {% endblock %}
