@@ -160,6 +160,7 @@ document.addEventListener('DOMContentLoaded', function () {
             start_year: parseInt(document.getElementById('startYear').value, 10),
             end_year: parseInt(document.getElementById('endYear').value, 10),
             base_cash_flow: parseFloat(document.getElementById('baseCashFlow').value),
+            base_cash_flow_date: document.getElementById('baseCashFlowDate').value,
             additional_flows: [],
             owned_tips: []
         };
@@ -198,6 +199,7 @@ document.addEventListener('DOMContentLoaded', function () {
         csvContent += `PARAM,start_year,${document.getElementById('startYear').value},,\n`;
         csvContent += `PARAM,end_year,${document.getElementById('endYear').value},,\n`;
         csvContent += `PARAM,base_cash_flow,${document.getElementById('baseCashFlow').value},,\n`;
+        csvContent += `PARAM,base_cash_flow_date,${document.getElementById('baseCashFlowDate').value},,\n`;
 
         document.querySelectorAll('.add-flow-row').forEach(row => {
             const y = row.querySelector('.flow-year').value;
@@ -261,6 +263,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 document.getElementById('startYear').value = '';
                 document.getElementById('endYear').value = '';
                 document.getElementById('baseCashFlow').value = '';
+                document.getElementById('baseCashFlowDate').value = '';
 
                 additionalCashFlowsContainer.innerHTML = '';
                 document.querySelectorAll('.owned-tip-row').forEach(r => r.remove());
@@ -272,6 +275,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     start_year: 0,
                     end_year: 0,
                     base_cash_flow: 0,
+                    base_cash_flow_date: '',
                     additional_flows: [],
                     owned_tips: []
                 };
@@ -328,6 +332,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     if (key === 'start_year') document.getElementById('startYear').value = val;
                     if (key === 'end_year') document.getElementById('endYear').value = val;
                     if (key === 'base_cash_flow') document.getElementById('baseCashFlow').value = val;
+                    if (key === 'base_cash_flow_date') document.getElementById('baseCashFlowDate').value = val;
                 } else if (type === 'ADD_FLOW') {
                     addCashFlowBtn.click();
                     const created = additionalCashFlowsContainer.lastElementChild;
@@ -375,6 +380,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (savedData.start_year !== undefined) document.getElementById('startYear').value = savedData.start_year;
                 if (savedData.end_year !== undefined) document.getElementById('endYear').value = savedData.end_year;
                 if (savedData.base_cash_flow !== undefined) document.getElementById('baseCashFlow').value = savedData.base_cash_flow;
+                if (savedData.base_cash_flow_date !== undefined) document.getElementById('baseCashFlowDate').value = savedData.base_cash_flow_date;
 
                 if (savedData.additional_flows && Array.isArray(savedData.additional_flows)) {
                     savedData.additional_flows.forEach(flow => {

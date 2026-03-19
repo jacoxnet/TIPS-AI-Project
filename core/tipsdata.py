@@ -32,6 +32,7 @@ class Ladder_values:
         self.start_year = 0
         self.end_year = 0
         self.base_cash_flow = 0
+        self.base_cash_flow_date = ''
         # additional flows is a list of dicts with "year" and "amount" keys
         self.additional_flows = []
         # owned_tips is a list of dicts with "id_type" "id_value" "account_type" "quantity"
@@ -44,6 +45,7 @@ class Ladder_values:
             'start_year': self.start_year,
             'end_year': self.end_year,
             'base_cash_flow': self.base_cash_flow,
+            'base_cash_flow_date': self.base_cash_flow_date,
             'additional_flows': self.additional_flows,
             'owned_tips': self.owned_tips
         }
@@ -57,6 +59,7 @@ class Ladder_values:
         self.start_year = pdata.get('start_year', 0)
         self.end_year = pdata.get('end_year', 0)
         self.base_cash_flow = pdata.get('base_cash_flow', 0)
+        self.base_cash_flow_date = pdata.get('base_cash_flow_date', '')
         self.additional_flows = pdata.get('additional_flows', [])
         self.owned_tips = pdata.get('owned_tips', [])
         print(f"DEBUG from json self {self}")

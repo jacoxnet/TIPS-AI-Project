@@ -1,6 +1,7 @@
 import json
 import requests
 from core.tipsdata import Tips, Ladder_values
+from .fetch import fetch_cpi_data
 
 def get_tip_details(id_type, id_value):
     """
@@ -29,7 +30,15 @@ def calculate_ladder(ladderp):
     start_year = int(ladderp.start_year)
     end_year = int(ladderp.end_year)
     base_cash_flow = float(ladderp.base_cash_flow)
+    base_cash_flow_date = getattr(ladderp, 'base_cash_flow_date', '')
+    print(f"DEBUG: base_cash_flow_date is '{base_cash_flow_date}'")
     additional_flows = {int(f['year']): float(f['amount']) for f in ladderp.additional_flows}
+    
+    # Calculate Inflation Factor using CPI data
+    print(f"DEBUG: Calling fetch_cpi_data({base_cash_flow_date})")
+    latest_cpi, as_of_cpi = fetch_cpi_data(base_cash_flow_date)
+    inflation_factor = latest_cpi / as_of_cpi if as_of_cpi else 1.0
+    print(f"DEBUG: Inflation Factor calculated as {inflation_factor} (Latest CPI: {latest_cpi}, As-Of CPI: {as_of_cpi})")
     
     owned_tips = []
     # Fetch specifics for all owned TIPS to ensure we have maturity_date, interest_rate and inflation_adjusted_value
@@ -63,7 +72,8 @@ def calculate_ladder(ladderp):
     print(f"Fetched details for {len(owned_tips)} owned TIPS.")
     ladder_years = []
     for y in range(start_year, end_year + 1):
-        target =  additional_flows.get(y, base_cash_flow)
+        raw_target = additional_flows.get(y, base_cash_flow)
+        target = raw_target * inflation_factor
         
         row = {
             'year': y,

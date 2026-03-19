@@ -47,9 +47,14 @@
                     </div>
                 </div>
                 <div class="form-group">
-                    <label for="baseCashFlow">Base Real After-TaxCash Flow ($/Year)</label>
+                    <label for="baseCashFlow">Base Real After-Tax Cash Flow ($/Year)</label>
                     <input type="number" id="baseCashFlow" name="base_cash_flow" placeholder="e.g., 50000" step="100"
                         required>
+                </div>
+                <div class="form-group">
+                    <label for="baseCashFlowDate">As-Of Date for Base Cash Flow</label>
+                    <input type="month" id="baseCashFlowDate" name="base_cash_flow_date" required>
+                    <small class="text-secondary" style="display:block; margin-top:0.25rem;">Used to inflate Target Cashflow up to present day.</small>
                 </div>
             </div>
 
@@ -108,5 +113,5 @@
 {% block extra_js %}
 {{ tips_data|json_script:"tips-data" }}
 {{ ladder_data|json_script:"saved-ladder-data" }}
-<script src="{% static 'js/data_entry.js' %}?v=2"></script>
+<script src="{% static 'js/data_entry.js' %}?v=3"></script>
 {% endblock %}

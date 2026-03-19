@@ -12,6 +12,7 @@ test_data = {
     "start_year": 2026,
     "end_year": 2030,
     "base_cash_flow": 50000,
+    "base_cash_flow_date": "2020-01",
     "additional_flows": [{"year": 2028, "amount": 10000}],
     "owned_tips": [
         {
@@ -23,9 +24,16 @@ test_data = {
     ]
 }
 
+from core.tipsdata import Ladder_values
+from core.fetch import fetch_tips_data
+
+print("Fetching TIPS data...")
+fetch_tips_data()
+
 print("Running test calculation...")
 try:
-    results = calculate_ladder(json.dumps(test_data))
+    ladder_obj = Ladder_values().from_json(json.dumps(test_data))
+    results = calculate_ladder(ladder_obj)
     for r in results:
         print(r)
     print("Test calculation passed.")
