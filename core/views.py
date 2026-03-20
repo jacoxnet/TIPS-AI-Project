@@ -8,32 +8,27 @@ from .tipsdata import Ladder_values, Tips
 from .tinit import clear_data
 
 def init_view(request):
-    print('DEBUG: starting app init view')
     clear_data(request)
     request.session['insession'] = True
     return HttpResponseRedirect(reverse('home'))
 
 def home_view(request):
-    print("DEBUG: starting app home view")
     if not request.session.get('insession', False):
         return HttpResponseRedirect(reverse(''))    
     # fetch tips data at put it in Tips.all_tips
     fetch_tips_data()
-    print (f"DEBUG: Download date: {Tips.download_date}, Number of TIPS: {len(Tips.all_tips)}")
     # create list of dicts of tips for json serialization
     tips_data = [tip.to_json() for tip in Tips.all_tips]
     return render(request, 'home.html', {
         'tips_data': tips_data, 'tips_date': Tips.download_date})
 
 def data_entry_view(request):
-    print("DEBUG: starting app data_entry view")
     fetch_tips_data()
     # create list of dicts of tips for json serialization
     tips_data = [tip.to_json() for tip in Tips.all_tips]
     ladder_data = request.session.get('ladder_data', None)
     ladderp = Ladder_values().from_json(ladder_data)
     ladder_data2 = ladderp.to_json()
-    print(f"DEBUG data entry ladder data from session {ladder_data2}")
     return render(request, 'data_entry.html', {
         'tips_data': tips_data,
         'ladder_data': ladder_data2
@@ -43,10 +38,8 @@ def ladder_display_view(request):
     context = {}
     if request.method == 'POST':
         ladder_data = request.POST.get('ladder_data')
-        print(f"DEBUG display view ladder data {ladder_data}")
         if ladder_data:
             ladderp = Ladder_values().from_json(ladder_data)
-            print(f"DEBUG display view ladderp {ladderp}")
             
             # If the payload indicates clearing data (start_year == 0)
             if ladderp.start_year == 0:

@@ -62,7 +62,6 @@ class Ladder_values:
         self.base_cash_flow_date = pdata.get('base_cash_flow_date', '')
         self.additional_flows = pdata.get('additional_flows', [])
         self.owned_tips = pdata.get('owned_tips', [])
-        print(f"DEBUG from json self {self}")
         return self
 
     def __repr__(self):
