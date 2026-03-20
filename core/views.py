@@ -14,7 +14,7 @@ def init_view(request):
 
 def home_view(request):
     if not request.session.get('insession', False):
-        return HttpResponseRedirect(reverse(''))    
+        return HttpResponseRedirect(reverse('init'))    
     # fetch tips data at put it in Tips.all_tips
     fetch_tips_data()
     # create list of dicts of tips for json serialization
@@ -35,6 +35,7 @@ def data_entry_view(request):
     })
 
 def ladder_display_view(request):
+    print("DEBUG: ladder_display_view called")
     context = {}
     if request.method == 'POST':
         ladder_data = request.POST.get('ladder_data')
