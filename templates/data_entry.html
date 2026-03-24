@@ -17,10 +17,12 @@
                     Load from CSV
                     <input type="file" id="loadCsvBtn" accept=".csv" style="display:none;">
                 </label>
-                <button type="button" class="btn btn-danger btn-sm" id="clearLadderBtn" style="width: 100%;">Clear Ladder
+                <button type="button" class="btn btn-danger btn-sm" id="clearLadderBtn" style="width: 100%;">Clear
+                    Ladder
                     Data</button>
             </div>
-            <button type="submit" form="ladderForm" class="btn btn-primary" style="font-size: 1.125rem; padding: 1rem 2rem;">Calculate Ladder Output &rarr;</button>
+            <button type="submit" form="ladderForm" class="btn btn-primary"
+                style="font-size: 1.125rem; padding: 1rem 2rem;">Calculate Ladder Output &rarr;</button>
         </div>
     </div>
     <form id="ladderForm" action="{% url 'ladder_display' %}" method="POST">
@@ -52,16 +54,18 @@
                         required>
                 </div>
                 <div class="form-group">
-                    <label for="baseCashFlowDate">As-Of Date for Base Cash Flow</label>
+                    <label for="baseCashFlowDate">As-Of Date for Base Real After-Tax Cash Flow</label>
                     <input type="month" id="baseCashFlowDate" name="base_cash_flow_date" required>
-                    <small class="text-secondary" style="display:block; margin-top:0.25rem;">Used to inflate Target Cashflow up to present day.</small>
+                    <small class="text-secondary" style="display:block; margin-top:0.25rem;">Used to inflate Base
+                        After-Tax
+                        Cash Flow up to present day.</small>
                 </div>
             </div>
 
             <!-- Different Cash Flows -->
             <div>
                 <div class="flex justify-between items-center mb-4" style="margin-top:0;">
-                    <h3 style="margin-bottom:0;">2. One-Time After-Tax Cash Flow Differences (Optional)</h3>
+                    <h3 style="margin-bottom:0;">2. One-Time Real After-Tax Cash Flow Differences (Optional)</h3>
                     <button type="button" class="btn btn-secondary btn-sm" id="addCashFlowBtn">+ Add Year</button>
                 </div>
                 <p class="text-secondary" style="font-size:0.875rem; margin-bottom:1rem;">Specify different amounts for
