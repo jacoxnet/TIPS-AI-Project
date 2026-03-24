@@ -45,6 +45,22 @@ document.addEventListener('DOMContentLoaded', function () {
     const loadCsvBtn = document.getElementById('loadCsvBtn');
     const clearLadderBtn = document.getElementById('clearLadderBtn');
 
+    const taxEffectInflation = document.getElementById('taxEffectInflation');
+    const assumedInflationRateContainer = document.getElementById('assumedInflationRateContainer');
+    const assumedInflationRate = document.getElementById('assumedInflationRate');
+
+    if (taxEffectInflation && assumedInflationRateContainer && assumedInflationRate) {
+        taxEffectInflation.addEventListener('change', () => {
+            if (taxEffectInflation.value === 'yes') {
+                assumedInflationRateContainer.style.display = 'block';
+                assumedInflationRate.required = true;
+            } else {
+                assumedInflationRateContainer.style.display = 'none';
+                assumedInflationRate.required = false;
+            }
+        });
+    }
+
     // --- Dynamic Additional Cash Flows ---
     addCashFlowBtn.addEventListener('click', () => {
         const row = document.createElement('div');
@@ -161,6 +177,8 @@ document.addEventListener('DOMContentLoaded', function () {
             end_year: parseInt(document.getElementById('endYear').value, 10),
             base_cash_flow: parseFloat(document.getElementById('baseCashFlow').value),
             base_cash_flow_date: document.getElementById('baseCashFlowDate').value,
+            tax_effect_inflation: document.getElementById('taxEffectInflation') && document.getElementById('taxEffectInflation').value === 'yes',
+            assumed_inflation_rate: (document.getElementById('taxEffectInflation') && document.getElementById('taxEffectInflation').value === 'yes') ? parseFloat(document.getElementById('assumedInflationRate').value || 0) : 0.0,
             additional_flows: [],
             owned_tips: []
         };
@@ -196,6 +214,8 @@ document.addEventListener('DOMContentLoaded', function () {
         let csvContent = "Type,Field1,Field2,Field3,Field4\n";
 
         csvContent += `PARAM,tax_rate,${document.getElementById('taxRate').value},,\n`;
+        csvContent += `PARAM,tax_effect_inflation,${document.getElementById('taxEffectInflation') ? document.getElementById('taxEffectInflation').value === 'yes' : false},,\n`;
+        csvContent += `PARAM,assumed_inflation_rate,${document.getElementById('assumedInflationRate') ? document.getElementById('assumedInflationRate').value : ''},,\n`;
         csvContent += `PARAM,start_year,${document.getElementById('startYear').value},,\n`;
         csvContent += `PARAM,end_year,${document.getElementById('endYear').value},,\n`;
         csvContent += `PARAM,base_cash_flow,${document.getElementById('baseCashFlow').value},,\n`;
@@ -260,6 +280,13 @@ document.addEventListener('DOMContentLoaded', function () {
         clearLadderBtn.addEventListener('click', () => {
             if (confirm("Are you sure you want to clear all ladder data?")) {
                 document.getElementById('taxRate').value = '';
+                if (document.getElementById('taxEffectInflation')) {
+                    document.getElementById('taxEffectInflation').value = 'no';
+                    document.getElementById('taxEffectInflation').dispatchEvent(new Event('change'));
+                }
+                if (document.getElementById('assumedInflationRate')) {
+                    document.getElementById('assumedInflationRate').value = '';
+                }
                 document.getElementById('startYear').value = '';
                 document.getElementById('endYear').value = '';
                 document.getElementById('baseCashFlow').value = '';
@@ -276,6 +303,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     end_year: 0,
                     base_cash_flow: 0,
                     base_cash_flow_date: '',
+                    tax_effect_inflation: false,
+                    assumed_inflation_rate: 0.0,
                     additional_flows: [],
                     owned_tips: []
                 };
@@ -329,6 +358,13 @@ document.addEventListener('DOMContentLoaded', function () {
                     const key = vals[1];
                     const val = vals[2];
                     if (key === 'tax_rate') document.getElementById('taxRate').value = val;
+                    if (key === 'tax_effect_inflation' && document.getElementById('taxEffectInflation')) {
+                        document.getElementById('taxEffectInflation').value = val === 'true' ? 'yes' : 'no';
+                        document.getElementById('taxEffectInflation').dispatchEvent(new Event('change'));
+                    }
+                    if (key === 'assumed_inflation_rate' && document.getElementById('assumedInflationRate')) {
+                        document.getElementById('assumedInflationRate').value = val;
+                    }
                     if (key === 'start_year') document.getElementById('startYear').value = val;
                     if (key === 'end_year') document.getElementById('endYear').value = val;
                     if (key === 'base_cash_flow') document.getElementById('baseCashFlow').value = val;
@@ -377,6 +413,13 @@ document.addEventListener('DOMContentLoaded', function () {
             if ((savedData.start_year !== undefined) && (savedData.start_year !== 0)) {
 
                 if (savedData.tax_rate !== undefined) document.getElementById('taxRate').value = savedData.tax_rate;
+                if (savedData.tax_effect_inflation !== undefined && document.getElementById('taxEffectInflation')) {
+                    document.getElementById('taxEffectInflation').value = savedData.tax_effect_inflation ? 'yes' : 'no';
+                    document.getElementById('taxEffectInflation').dispatchEvent(new Event('change'));
+                }
+                if (savedData.assumed_inflation_rate !== undefined && document.getElementById('assumedInflationRate')) {
+                    document.getElementById('assumedInflationRate').value = savedData.assumed_inflation_rate;
+                }
                 if (savedData.start_year !== undefined) document.getElementById('startYear').value = savedData.start_year;
                 if (savedData.end_year !== undefined) document.getElementById('endYear').value = savedData.end_year;
                 if (savedData.base_cash_flow !== undefined) document.getElementById('baseCashFlow').value = savedData.base_cash_flow;

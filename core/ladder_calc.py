@@ -31,7 +31,9 @@ def calculate_ladder(ladderp):
     end_year = int(ladderp.end_year)
     base_cash_flow = float(ladderp.base_cash_flow)
     base_cash_flow_date = getattr(ladderp, 'base_cash_flow_date', '')
-    print(f"DEBUG: base_cash_flow_date is '{base_cash_flow_date}'")
+    tax_effect_inflation = getattr(ladderp, 'tax_effect_inflation', False)
+    assumed_inflation_rate = float(getattr(ladderp, 'assumed_inflation_rate', 0.0)) / 100.0
+    print(f"DEBUG: base_cash_flow_date is '{base_cash_flow_date}', tax_effect={tax_effect_inflation}, assumed_inf={assumed_inflation_rate}")
     additional_flows = {int(f['year']): float(f['amount']) for f in ladderp.additional_flows}
     
     # Calculate Inflation Factor using CPI data
@@ -98,6 +100,10 @@ def calculate_ladder(ladderp):
             # Tax on Coupon (Prompt: tax rate * non-Roth coupons)
             if tip['account_type'] in ['pretax', 'taxable']:
                 row['tax_drag'] += annual_coupon * tax_rate
+                
+            # Tax effect on inflation-adjusted principal in taxable accounts
+            if tax_effect_inflation and tip['account_type'] == 'taxable':
+                row['tax_drag'] += inflated_principal * assumed_inflation_rate * tax_rate
                 
             # If matures this year, add principal
             if tip['maturity_year'] == y:
