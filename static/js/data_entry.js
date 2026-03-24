@@ -61,6 +61,40 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // --- Populate As-Of Date Year Dropdown ---
+    const baseCashFlowYear = document.getElementById('baseCashFlowYear');
+    if (baseCashFlowYear) {
+        const currentYear = new Date().getFullYear();
+        // TIPS started around 1997, let's offer up to current + a little buffer
+        for (let y = currentYear + 1; y >= 1997; y--) {
+            const opt = document.createElement('option');
+            opt.value = y;
+            opt.textContent = y;
+            baseCashFlowYear.appendChild(opt);
+        }
+    }
+
+    // --- Helpers for As-Of Date ---
+    function getBaseCashFlowDate() {
+        const m = document.getElementById('baseCashFlowMonth').value;
+        const y = document.getElementById('baseCashFlowYear').value;
+        if (m && y) return `${y}-${m}`;
+        return '';
+    }
+
+    function setBaseCashFlowDate(val) {
+        const monthSelect = document.getElementById('baseCashFlowMonth');
+        const yearSelect = document.getElementById('baseCashFlowYear');
+        if (val && val.includes('-')) {
+            const parts = val.split('-');
+            yearSelect.value = parts[0];
+            monthSelect.value = parts[1];
+        } else {
+            yearSelect.value = '';
+            monthSelect.value = '';
+        }
+    }
+
     // --- Dynamic Additional Cash Flows ---
     addCashFlowBtn.addEventListener('click', () => {
         const row = document.createElement('div');
@@ -176,7 +210,7 @@ document.addEventListener('DOMContentLoaded', function () {
             start_year: parseInt(document.getElementById('startYear').value, 10),
             end_year: parseInt(document.getElementById('endYear').value, 10),
             base_cash_flow: parseFloat(document.getElementById('baseCashFlow').value),
-            base_cash_flow_date: document.getElementById('baseCashFlowDate').value,
+            base_cash_flow_date: getBaseCashFlowDate(),
             tax_effect_inflation: document.getElementById('taxEffectInflation') && document.getElementById('taxEffectInflation').value === 'yes',
             assumed_inflation_rate: (document.getElementById('taxEffectInflation') && document.getElementById('taxEffectInflation').value === 'yes') ? parseFloat(document.getElementById('assumedInflationRate').value || 0) : 0.0,
             additional_flows: [],
@@ -219,7 +253,7 @@ document.addEventListener('DOMContentLoaded', function () {
         csvContent += `PARAM,start_year,${document.getElementById('startYear').value},,\n`;
         csvContent += `PARAM,end_year,${document.getElementById('endYear').value},,\n`;
         csvContent += `PARAM,base_cash_flow,${document.getElementById('baseCashFlow').value},,\n`;
-        csvContent += `PARAM,base_cash_flow_date,${document.getElementById('baseCashFlowDate').value},,\n`;
+        csvContent += `PARAM,base_cash_flow_date,${getBaseCashFlowDate()},,\n`;
 
         document.querySelectorAll('.add-flow-row').forEach(row => {
             const y = row.querySelector('.flow-year').value;
@@ -290,7 +324,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 document.getElementById('startYear').value = '';
                 document.getElementById('endYear').value = '';
                 document.getElementById('baseCashFlow').value = '';
-                document.getElementById('baseCashFlowDate').value = '';
+                setBaseCashFlowDate('');
 
                 additionalCashFlowsContainer.innerHTML = '';
                 document.querySelectorAll('.owned-tip-row').forEach(r => r.remove());
@@ -368,7 +402,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     if (key === 'start_year') document.getElementById('startYear').value = val;
                     if (key === 'end_year') document.getElementById('endYear').value = val;
                     if (key === 'base_cash_flow') document.getElementById('baseCashFlow').value = val;
-                    if (key === 'base_cash_flow_date') document.getElementById('baseCashFlowDate').value = val;
+                    if (key === 'base_cash_flow_date') setBaseCashFlowDate(val);
                 } else if (type === 'ADD_FLOW') {
                     addCashFlowBtn.click();
                     const created = additionalCashFlowsContainer.lastElementChild;
@@ -423,7 +457,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (savedData.start_year !== undefined) document.getElementById('startYear').value = savedData.start_year;
                 if (savedData.end_year !== undefined) document.getElementById('endYear').value = savedData.end_year;
                 if (savedData.base_cash_flow !== undefined) document.getElementById('baseCashFlow').value = savedData.base_cash_flow;
-                if (savedData.base_cash_flow_date !== undefined) document.getElementById('baseCashFlowDate').value = savedData.base_cash_flow_date;
+                if (savedData.base_cash_flow_date !== undefined) setBaseCashFlowDate(savedData.base_cash_flow_date);
 
                 if (savedData.additional_flows && Array.isArray(savedData.additional_flows)) {
                     savedData.additional_flows.forEach(flow => {

@@ -173,6 +173,7 @@ label {
 
 input[type="number"],
 input[type="text"],
+input[type="month"],
 select {
   width: 100%;
   padding: 0.75rem 1rem;
