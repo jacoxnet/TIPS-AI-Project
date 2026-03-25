@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function populateDropdown(selectElement, idType, preselectedValue) {
-        selectElement.innerHTML = '<option value="" disabled selected>Select a TIP...</option>';
+        selectElement.innerHTML = '<option value="" disabled selected>Select a TIPS...</option>';
         tipsData.forEach(tip => {
             const option = document.createElement('option');
             if (idType === 'cusip') {
@@ -104,7 +104,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 <input type="number" class="flow-year" placeholder="Year (e.g., 2030)" required>
             </div>
             <div style="flex:1;">
-                <input type="number" class="flow-amount" placeholder="Amount ($)" step="100" required>
+                <input type="number" class="flow-amount" placeholder="Amount ($)" required>
             </div>
             <button type="button" class="btn btn-danger btn-sm remove-btn">Remove</button>
         `;
