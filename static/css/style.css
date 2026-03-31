@@ -7,7 +7,7 @@
   --accent-primary: #3b82f6;
   --accent-hover: #2563eb;
   --border-color: #e2e8f0;
-  
+
   --success: #10b981;
   --danger: #ef4444;
   --warning: #f59e0b;
@@ -16,12 +16,12 @@
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  
+
   /* Radii */
   --radius-md: 8px;
   --radius-lg: 12px;
   --radius-full: 9999px;
-  
+
   /* Transitions */
   --transition-fast: 0.15s ease-in-out;
   --transition-normal: 0.3s ease-in-out;
@@ -64,16 +64,23 @@ body {
   top: 0;
   z-index: 100;
   box-shadow: var(--shadow-sm);
-  backdrop-filter: blur(10px); /* Glassmorphism */
-  background-color: rgba(var(--bg-secondary), 0.8); /* Requires rgb values, fallback used here */
+  backdrop-filter: blur(10px);
+  /* Glassmorphism */
+  background-color: rgba(var(--bg-secondary), 0.8);
+  /* Requires rgb values, fallback used here */
 }
 
 /* Adjust navbar transparency correctly */
 @media (prefers-color-scheme: light) {
-  .navbar { background-color: rgba(255, 255, 255, 0.85); }
+  .navbar {
+    background-color: rgba(255, 255, 255, 0.85);
+  }
 }
+
 @media (prefers-color-scheme: dark) {
-  .navbar { background-color: rgba(30, 41, 59, 0.85); }
+  .navbar {
+    background-color: rgba(30, 41, 59, 0.85);
+  }
 }
 
 .nav-container {
@@ -131,7 +138,9 @@ body {
 }
 
 /* Typography & Headings */
-h1, h2, h3 {
+h1,
+h2,
+h3 {
   color: var(--text-primary);
   font-weight: 600;
   letter-spacing: -0.02em;
@@ -186,7 +195,8 @@ select {
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
-input:focus, select:focus {
+input:focus,
+select:focus {
   outline: none;
   border-color: var(--accent-primary);
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
@@ -245,9 +255,14 @@ table {
   text-align: left;
 }
 
-th, td {
+th,
+td {
   padding: 1rem;
   border-bottom: 1px solid var(--border-color);
+}
+
+td {
+  white-space: nowrap;
 }
 
 th {
@@ -275,25 +290,55 @@ tbody tr:hover {
   padding: 0.5rem 1rem;
   font-size: 0.875rem;
 }
+
 .btn-danger {
   background-color: transparent;
   color: var(--danger);
   border: 1px solid var(--danger);
 }
+
 .btn-danger:hover {
   background-color: rgba(239, 68, 68, 0.1);
 }
 
 /* Utility / Helpers */
-.flex { display: flex; }
-.justify-between { justify-content: space-between; }
-.items-center { align-items: center; }
-.gap-4 { gap: 1rem; }
-.mt-4 { margin-top: 1rem; }
-.mb-4 { margin-bottom: 1rem; }
-.text-right { text-align: right; }
-.text-center { text-align: center; }
+.flex {
+  display: flex;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.gap-4 {
+  gap: 1rem;
+}
+
+.mt-4 {
+  margin-top: 1rem;
+}
+
+.mb-4 {
+  margin-bottom: 1rem;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.text-center {
+  text-align: center;
+}
 
 /* Dynamic states */
-.text-success { color: var(--success); }
-.text-danger { color: var(--danger); }
+.text-success {
+  color: var(--success);
+}
+
+.text-danger {
+  color: var(--danger);
+}

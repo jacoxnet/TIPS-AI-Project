@@ -42,7 +42,7 @@
                     <td class="text-right">${{ row.target|floatformat:2|intcomma }}</td>
                     <td class="text-right text-success">+${{ row.coupon_income|floatformat:2|intcomma }}</td>
                     <td class="text-right text-success">+${{ row.principal_income|floatformat:2|intcomma }}</td>
-                    <td class="text-right text-danger" style="white-space: nowrap;">-${{ row.tax_drag|floatformat:2|intcomma }}</td>
+                    <td class="text-right text-danger">-${{ row.tax_drag|floatformat:2|intcomma }}</td>
                     <td class="text-right" style="border-left: 2px solid var(--border-color); font-weight:500;">
                         ${{ row.net_flow|floatformat:2|intcomma }}
                     </td>
