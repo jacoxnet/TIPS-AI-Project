@@ -45,11 +45,11 @@ def calculate_ladder(ladderp):
     owned_tips = []
     # Fetch specifics for all owned TIPS to ensure we have maturity_date, interest_rate and inflation_adjusted_value
     for tip in ladderp.owned_tips:
-        print(f"Fetching details for TIP: {tip['id_type']}={tip['id_value']}")
+        #print(f"Fetching details for TIP: {tip['id_type']}={tip['id_value']}")
         details = get_tip_details(tip['id_type'], tip['id_value'])
         if details:
             try:
-                print(f"Details found: {details}")
+                #print(f"Details found: {details}")
                 mat_year = int(details.maturity_date.split('-')[0])
                 # Ensure parsing string like 0.125 or 0.125%
                 rate_str = str(details.interest_rate).replace('%', '')

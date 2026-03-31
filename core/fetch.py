@@ -128,5 +128,6 @@ def fetch_cpi_data(as_of_date):
         as_of_cpi = float(observations_as_of[0]['value']) if observations_as_of else 1.0
     except Exception as e:
         print(f"Error fetching as-of CPI from FRED: {e}")
+        return 1.0, 1.0
 
     return latest_cpi, as_of_cpi

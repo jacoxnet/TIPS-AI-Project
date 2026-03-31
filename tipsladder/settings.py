@@ -15,6 +15,7 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+import os
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -23,7 +24,8 @@ load_dotenv()
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-_dl72=c9=t6o1hkb+656nd4ki+4&2p1ia5u_awbw!!(lq+h9bc'
+# SECRET_KEY = 'django-insecure-_dl72=c9=t6o1hkb+656nd4ki+4&2p1ia5u_awbw!!(lq+h9bc'
+SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
