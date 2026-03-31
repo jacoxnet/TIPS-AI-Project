@@ -2,6 +2,8 @@ import requests
 import datetime
 import os
 
+HARD_CODED_CPI_2025_10 = 324.654
+
 from core.tipsdata import Tips
 
 def fetch_tips_data():
@@ -110,24 +112,28 @@ def fetch_cpi_data(as_of_date):
         return 1.0, 1.0
 
     # 2. Fetch As-Of CPI
-    # We set observation_end to the as_of_date and get the latest observation before or on that date
-    params_as_of = {
-        "series_id": "CPIAUCNS",
-        "api_key": api_key,
-        "file_type": "json",
-        "sort_order": "desc",
-        "limit": 1,
-        "observation_end": as_of_date
-    }
-    
-    try:
-        res_as_of = requests.get(url, params=params_as_of, timeout=10)
-        res_as_of.raise_for_status()
-        observations_as_of = res_as_of.json().get('observations', [])
-        print(f"DEBUG As-Of CPI: {observations_as_of}")
-        as_of_cpi = float(observations_as_of[0]['value']) if observations_as_of else 1.0
-    except Exception as e:
-        print(f"Error fetching as-of CPI from FRED: {e}")
-        return 1.0, 1.0
+    if as_of_date.startswith("2025-10"):
+        as_of_cpi = HARD_CODED_CPI_2025_10
+        print(f"DEBUG As-Of CPI (hard-coded): {as_of_cpi}")
+    else:
+        # We set observation_end to the as_of_date and get the latest observation before or on that date
+        params_as_of = {
+            "series_id": "CPIAUCNS",
+            "api_key": api_key,
+            "file_type": "json",
+            "sort_order": "desc",
+            "limit": 1,
+            "observation_end": as_of_date
+        }
+        
+        try:
+            res_as_of = requests.get(url, params=params_as_of, timeout=10)
+            res_as_of.raise_for_status()
+            observations_as_of = res_as_of.json().get('observations', [])
+            print(f"DEBUG As-Of CPI: {observations_as_of}")
+            as_of_cpi = float(observations_as_of[0]['value']) if observations_as_of else 1.0
+        except Exception as e:
+            print(f"Error fetching as-of CPI from FRED: {e}")
+            return 1.0, 1.0
 
     return latest_cpi, as_of_cpi

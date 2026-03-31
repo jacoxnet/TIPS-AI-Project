@@ -42,12 +42,12 @@
                     <td class="text-right">${{ row.target|floatformat:2|intcomma }}</td>
                     <td class="text-right text-success">+${{ row.coupon_income|floatformat:2|intcomma }}</td>
                     <td class="text-right text-success">+${{ row.principal_income|floatformat:2|intcomma }}</td>
-                    <td class="text-right text-danger">-${{ row.tax_drag|floatformat:2|intcomma }}</td>
+                    <td class="text-right text-danger" style="white-space: nowrap;">-${{ row.tax_drag|floatformat:2|intcomma }}</td>
                     <td class="text-right" style="border-left: 2px solid var(--border-color); font-weight:500;">
                         ${{ row.net_flow|floatformat:2|intcomma }}
                     </td>
                     <td class="text-right"
-                        style="font-weight:700; color: {% if row.balance > 0 %}var(--success){% elif row.balance < 0 %}var(--danger){% else %}inherit{% endif %};">
+                        style="font-weight:700; color: {% if row.balance > 0 %}var(--success){% elif row.balance < 0 %}var(--danger){% else %}inherit{% endif %}; white-space: nowrap;">
                         {% if row.balance > 0 %} ${{ row.balance|floatformat:2|intcomma }} {% elif row.balance < 0 %}
                             -${{ row.shortfall|floatformat:2|intcomma }} {% else %} $0.00 {% endif %} </td>
                 </tr>
