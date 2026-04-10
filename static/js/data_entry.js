@@ -309,47 +309,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // --- Clear Ladder Data functionality ---
-    if (clearLadderBtn) {
-        clearLadderBtn.addEventListener('click', () => {
-            if (confirm("Are you sure you want to clear all ladder data?")) {
-                document.getElementById('taxRate').value = '';
-                if (document.getElementById('taxEffectInflation')) {
-                    document.getElementById('taxEffectInflation').value = 'no';
-                    document.getElementById('taxEffectInflation').dispatchEvent(new Event('change'));
-                }
-                if (document.getElementById('assumedInflationRate')) {
-                    document.getElementById('assumedInflationRate').value = '';
-                }
-                document.getElementById('startYear').value = '';
-                document.getElementById('endYear').value = '';
-                document.getElementById('baseCashFlow').value = '';
-                setBaseCashFlowDate('');
-
-                additionalCashFlowsContainer.innerHTML = '';
-                document.querySelectorAll('.owned-tip-row').forEach(r => r.remove());
-                if (emptyTipsRow) emptyTipsRow.style.display = 'table-row';
-
-                // Submit empty payload to clear session data on backend
-                const emptyPayload = {
-                    tax_rate: 0,
-                    start_year: 0,
-                    end_year: 0,
-                    base_cash_flow: 0,
-                    base_cash_flow_date: '',
-                    tax_effect_inflation: false,
-                    assumed_inflation_rate: 0.0,
-                    additional_flows: [],
-                    owned_tips: []
-                };
-                ladderDataInput.value = JSON.stringify(emptyPayload);
-                // Dispatch a submit event so the event listener handles the form submission properly
-                // ladderForm.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
-                ladderForm.submit()
-            }
-        });
-    }
-
     // --- CSV Load functionality ---
     loadCsvBtn.addEventListener('change', (e) => {
         const file = e.target.files[0];

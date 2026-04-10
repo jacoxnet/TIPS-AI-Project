@@ -53,6 +53,15 @@
                 </tr>
                 {% endfor %}
             </tbody>
+            <tfoot>
+                <tr style="border-top: 2px solid var(--border-color);">
+                    <td colspan="6" class="text-right"><strong>TOTAL</strong></td>
+                    <td class="text-right"
+                        style="font-weight:700; color: {% if total_balance > 0 %}var(--success){% elif total_balance < 0 %}var(--danger){% else %}inherit{% endif %}; white-space: nowrap;">
+                        {% if total_balance > 0 %} ${{ total_balance|floatformat:2|intcomma }} {% elif total_balance < 0 %}
+                            -${{ total_shortfall|floatformat:2|intcomma }} {% else %} $0.00 {% endif %} </td>
+                </tr>
+            </tfoot>
         </table>
     </div>
     {% elif not error %}

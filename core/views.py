@@ -69,4 +69,16 @@ def ladder_display_view(request):
             if ladderp.start_year != 0:
                 results = calculate_ladder(ladderp)
                 context['ladder_years'] = results
+
+    if 'ladder_years' in context:
+        total_balance = sum(row['balance'] for row in context['ladder_years'])
+        context['total_balance'] = total_balance
+        context['total_shortfall'] = -total_balance if total_balance < 0 else 0
+
     return render(request, 'ladder_display.html', context)
+
+def clear_ladder_view(request):
+    if 'ladder_data' in request.session:
+        del request.session['ladder_data']
+    return HttpResponseRedirect(reverse('data_entry'))
+

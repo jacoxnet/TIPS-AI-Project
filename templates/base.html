@@ -17,11 +17,13 @@
 <body>
     <nav class="navbar">
         <div class="nav-container">
-            <a href="{% url 'home' %}" class="nav-brand">TIPS Ladder</a>
+            <a href="{% url 'home' %}" class="nav-brand">After-Tax TIPS Ladder Calculator</a>
             <div class="nav-links">
                 <a href="{% url 'home' %}" class="nav-link">TIPS Data</a>
                 <a href="{% url 'data_entry' %}" class="nav-link">Build Ladder</a>
                 <a href="{% url 'ladder_display' %}" class="nav-link">View Results</a>
+                <a href="{% url 'clear_ladder' %}" class="nav-link" style="color: var(--danger);"
+                   onclick="return confirm('Are you sure you want to clear all ladder data?');">Clear Ladder Data</a>
             </div>
         </div>
     </nav>
@@ -32,7 +34,7 @@
     </main>
 
     <footer class="footer">
-        <p>&copy; 2026 TIPS Ladder Web App</p>
+        <p>&copy; 2026 After-Tax TIPS Ladder Web App</p>
     </footer>
 
     {% block extra_js %}
