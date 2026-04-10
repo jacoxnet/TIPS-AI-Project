@@ -1,2 +1,2 @@
 # TIPS-AI-Project
-Files for TIPS AI Project with mweinberg
+Files for TIPS AI Project with mweinb
