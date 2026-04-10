@@ -23,6 +23,8 @@ def home_view(request):
         'tips_data': tips_data, 'tips_date': Tips.download_date})
 
 def data_entry_view(request):
+    if not request.session.get('insession', False):
+        return HttpResponseRedirect(reverse('init'))    
     fetch_tips_data()
     # create list of dicts of tips for json serialization
     tips_data = [tip.to_json() for tip in Tips.all_tips]
@@ -35,6 +37,8 @@ def data_entry_view(request):
     })
 
 def ladder_display_view(request):
+    if not request.session.get('insession', False):
+        return HttpResponseRedirect(reverse('init'))    
     print("DEBUG: ladder_display_view called")
     context = {}
     if request.method == 'POST':
