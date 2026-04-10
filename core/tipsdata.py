@@ -25,6 +25,10 @@ class Tips:
             'ref_cpi': self.ref_cpi,
             'index_ratio': self.index_ratio
         }
+
+class CpiData:
+    download_date = None
+    cpi_cache = {}
     
 class Ladder_values:
     def __init__(self):

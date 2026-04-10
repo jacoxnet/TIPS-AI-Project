@@ -4,7 +4,7 @@ import os
 
 HARD_CODED_CPI_2025_10 = 324.654
 
-from core.tipsdata import Tips
+from core.tipsdata import Tips, CpiData
 
 def fetch_tips_data():
     """
@@ -89,6 +89,15 @@ def fetch_cpi_data(as_of_date):
     if len(as_of_date) == 7:
         as_of_date += "-01"
 
+    today = datetime.date.today().isoformat()
+    if CpiData.download_date != today:
+        CpiData.download_date = today
+        CpiData.cpi_cache = {}
+
+    if as_of_date in CpiData.cpi_cache:
+        print(f"DEBUG: CPI data already downloaded for today ({today}) and as_of_date={as_of_date}. Skipping fetch.")
+        return CpiData.cpi_cache[as_of_date]
+
     api_key = os.environ.get("FRED_API_KEY", "")
     url = "https://api.stlouisfed.org/fred/series/observations"
     
@@ -135,5 +144,5 @@ def fetch_cpi_data(as_of_date):
         except Exception as e:
             print(f"Error fetching as-of CPI from FRED: {e}")
             return 1.0, 1.0
-
+    CpiData.cpi_cache[as_of_date] = (latest_cpi, as_of_cpi)
     return latest_cpi, as_of_cpi
