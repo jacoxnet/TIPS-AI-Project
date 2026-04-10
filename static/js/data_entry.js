@@ -365,8 +365,21 @@ document.addEventListener('DOMContentLoaded', function () {
             document.querySelectorAll('.owned-tip-row').forEach(r => r.remove());
             if (emptyTipsRow) emptyTipsRow.style.display = 'table-row';
 
-            // Simple CSV parser ignoring headers
-            for (let i = 1; i < lines.length; i++) {
+            // Determine if this is the old format (headers or TYPE/PARAM prefixes) or the new simple format without headers.
+            let isOldFormat = false;
+            let startIndex = 0;
+            if (lines.length > 0) {
+                const checkLine = lines[0].toUpperCase();
+                if (checkLine.startsWith('TYPE,')) {
+                    isOldFormat = true;
+                    startIndex = 1; // skip header
+                } else if (checkLine.startsWith('PARAM,') || checkLine.startsWith('OWNED_TIP,') || checkLine.startsWith('ADD_FLOW,')) {
+                    isOldFormat = true;
+                    startIndex = 0; // no header but old format
+                }
+            }
+
+            for (let i = startIndex; i < lines.length; i++) {
                 const line = lines[i].trim();
                 if (!line) continue;
 
@@ -387,48 +400,78 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
                 vals.push(currentVal);
 
-                const type = vals[0];
-                if (type === 'PARAM') {
-                    const key = vals[1];
-                    const val = vals[2];
-                    if (key === 'tax_rate') document.getElementById('taxRate').value = val;
-                    if (key === 'tax_effect_inflation' && document.getElementById('taxEffectInflation')) {
-                        document.getElementById('taxEffectInflation').value = val === 'true' ? 'yes' : 'no';
-                        document.getElementById('taxEffectInflation').dispatchEvent(new Event('change'));
-                    }
-                    if (key === 'assumed_inflation_rate' && document.getElementById('assumedInflationRate')) {
-                        document.getElementById('assumedInflationRate').value = val;
-                    }
-                    if (key === 'start_year') document.getElementById('startYear').value = val;
-                    if (key === 'end_year') document.getElementById('endYear').value = val;
-                    if (key === 'base_cash_flow') document.getElementById('baseCashFlow').value = val;
-                    if (key === 'base_cash_flow_date') setBaseCashFlowDate(val);
-                } else if (type === 'ADD_FLOW') {
-                    addCashFlowBtn.click();
-                    const created = additionalCashFlowsContainer.lastElementChild;
-                    created.querySelector('.flow-year').value = vals[1];
-                    created.querySelector('.flow-amount').value = vals[2];
-                } else if (type === 'OWNED_TIP') {
-                    addOwnedTipBtn.click();
-                    const created = ownedTipsTbody.lastElementChild;
-                    const typeSelect = created.querySelector('.tip-id-type');
-                    const valueSelect = created.querySelector('.tip-id-value');
+                if (isOldFormat) {
+                    const type = vals[0];
+                    if (type === 'PARAM') {
+                        const key = vals[1];
+                        const val = vals[2];
+                        if (key === 'tax_rate') document.getElementById('taxRate').value = val;
+                        if (key === 'tax_effect_inflation' && document.getElementById('taxEffectInflation')) {
+                            document.getElementById('taxEffectInflation').value = val === 'true' ? 'yes' : 'no';
+                            document.getElementById('taxEffectInflation').dispatchEvent(new Event('change'));
+                        }
+                        if (key === 'assumed_inflation_rate' && document.getElementById('assumedInflationRate')) {
+                            document.getElementById('assumedInflationRate').value = val;
+                        }
+                        if (key === 'start_year') document.getElementById('startYear').value = val;
+                        if (key === 'end_year') document.getElementById('endYear').value = val;
+                        if (key === 'base_cash_flow') document.getElementById('baseCashFlow').value = val;
+                        if (key === 'base_cash_flow_date') setBaseCashFlowDate(val);
+                    } else if (type === 'ADD_FLOW') {
+                        addCashFlowBtn.click();
+                        const created = additionalCashFlowsContainer.lastElementChild;
+                        created.querySelector('.flow-year').value = vals[1];
+                        created.querySelector('.flow-amount').value = vals[2];
+                    } else if (type === 'OWNED_TIP') {
+                        addOwnedTipBtn.click();
+                        const created = ownedTipsTbody.lastElementChild;
+                        const typeSelect = created.querySelector('.tip-id-type');
+                        const valueSelect = created.querySelector('.tip-id-value');
 
-                    typeSelect.value = vals[1];
-                    populateDropdown(valueSelect, vals[1], vals[2]);
+                        typeSelect.value = vals[1];
+                        populateDropdown(valueSelect, vals[1], vals[2]);
 
-                    // Fallback in case value isn't found in options
-                    if (valueSelect.value !== vals[2]) {
-                        const opt = document.createElement('option');
-                        opt.value = vals[2];
-                        opt.textContent = vals[2] + ' (Loaded)';
-                        valueSelect.appendChild(opt);
-                        valueSelect.value = vals[2];
+                        // Fallback in case value isn't found in options
+                        if (valueSelect.value !== vals[2]) {
+                            const opt = document.createElement('option');
+                            opt.value = vals[2];
+                            opt.textContent = vals[2] + ' (Loaded)';
+                            valueSelect.appendChild(opt);
+                            valueSelect.value = vals[2];
+                        }
+
+                        created.querySelector('.tip-account-type').value = vals[3];
+                        created.querySelector('.tip-quantity').value = vals[4];
+                        triggerConfirm(created);
                     }
+                } else {
+                    // New CSV format: CUSIP, Quantity, Maturity Year (no headers)
+                    if (vals.length >= 2) {
+                        const cusip = vals[0].trim();
+                        const quantity = vals[1].trim();
 
-                    created.querySelector('.tip-account-type').value = vals[3];
-                    created.querySelector('.tip-quantity').value = vals[4];
-                    triggerConfirm(created);
+                        addOwnedTipBtn.click();
+                        const created = ownedTipsTbody.lastElementChild;
+                        const typeSelect = created.querySelector('.tip-id-type');
+                        const valueSelect = created.querySelector('.tip-id-value');
+
+                        typeSelect.value = 'cusip';
+                        populateDropdown(valueSelect, 'cusip', cusip);
+
+                        // Fallback in case value isn't found in options
+                        if (valueSelect.value !== cusip) {
+                            const opt = document.createElement('option');
+                            opt.value = cusip;
+                            opt.textContent = cusip + ' (Loaded)';
+                            valueSelect.appendChild(opt);
+                            valueSelect.value = cusip;
+                        }
+
+                        // Set to pretax per requirements
+                        created.querySelector('.tip-account-type').value = 'pretax';
+                        created.querySelector('.tip-quantity').value = quantity;
+                        triggerConfirm(created);
+                    }
                 }
             }
         };
