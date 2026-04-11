@@ -15,7 +15,7 @@
             <thead>
                 <tr>
                     <th>CUSIP</th>
-                    <th>Issue Date</th>
+                    <th>Dated Date</th>
                     <th>Maturity Date</th>
                     <th>Interest Rate (%)</th>
                     <th>Ref CPI</th>
@@ -26,7 +26,7 @@
                 {% for tip in tips_data %}
                 <tr>
                     <td>{{ tip.cusip }}</td>
-                    <td>{{ tip.issue_date }}</td>
+                    <td>{{ tip.dated_date }}</td>
                     <td>{{ tip.maturity_date }}</td>
                     <td>{{ tip.interest_rate }}</td>
                     <td>{{ tip.ref_cpi }}</td>

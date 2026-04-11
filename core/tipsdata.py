@@ -8,9 +8,9 @@ class Tips:
     download_date = None
     all_tips = None
     
-    def __init__(self, cusip, issue_date, maturity_date, interest_rate, ref_cpi):
+    def __init__(self, cusip, dated_date, maturity_date, interest_rate, ref_cpi):
         self.cusip = cusip
-        self.issue_date = issue_date
+        self.dated_date = dated_date
         self.maturity_date = maturity_date
         self.interest_rate = interest_rate
         self.ref_cpi = ref_cpi
@@ -19,7 +19,7 @@ class Tips:
     def to_json(self):
         return {
             'cusip': self.cusip,
-            'issue_date': self.issue_date,
+            'dated_date': self.dated_date,
             'maturity_date': self.maturity_date,
             'interest_rate': self.interest_rate,
             'ref_cpi': self.ref_cpi,

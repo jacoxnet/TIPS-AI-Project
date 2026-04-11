@@ -2,7 +2,11 @@ import requests
 import datetime
 import os
 
-HARD_CODED_CPI_2025_10 = 324.654
+# This is a hard-coded CPI value for October 2025 which replaces the missing data
+# point in the FRED data due to the government shutdown. This value is midway between
+# the September 2025 CPI (324.800) and the November 2025 CPI (324.122).
+
+HARD_CODED_CPI_2025_10 = 324.461
 
 from core.tipsdata import Tips, CpiData
 
@@ -39,7 +43,7 @@ def fetch_tips_data():
             # create new Tips with this downloaded data
             tips = Tips(
                 cusip=cusip,
-                issue_date=item.get('original_issue_date', 'N/A'),
+                dated_date=item.get('dated_date', 'N/A'),
                 maturity_date=item.get('maturity_date', 'N/A'),
                 interest_rate=item.get('interest_rate', 'N/A'),
                 ref_cpi=item.get('ref_cpi_on_dated_date', 'N/A')
