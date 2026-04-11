@@ -11,6 +11,35 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    // Given a stored id_type / id_value, return display strings {cusip, maturityCoupon}
+    function resolveDisplayValues(idType, idValue) {
+        if (idType === 'cusip') {
+            const tip = tipsData.find(t => t.cusip === idValue);
+            const cusip = idValue;
+            const maturityCoupon = tip ? `${tip.maturity_date} / ${tip.interest_rate}%` : '—';
+            return { cusip, maturityCoupon };
+        } else {
+            // idValue is "rate%,maturity_date"
+            const parts = idValue.split(',');
+            const rate = parts[0];
+            const maturity = parts[1] || '';
+            const tip = tipsData.find(t => {
+                const val = `${t.interest_rate}%,${t.maturity_date}`;
+                return val === idValue;
+            });
+            const cusip = tip ? tip.cusip : '—';
+            const maturityCoupon = `${maturity} / ${rate}`;
+            return { cusip, maturityCoupon };
+        }
+    }
+
+    function accountTypeLabel(val) {
+        if (val === 'roth') return 'Roth';
+        if (val === 'pretax') return 'Pretax (e.g., 401k/IRA)';
+        if (val === 'taxable') return 'Taxable Brokerage';
+        return val;
+    }
+
     function populateDropdown(selectElement, idType, preselectedValue) {
         selectElement.innerHTML = '<option value="" disabled selected>Select a TIPS...</option>';
         tipsData.forEach(tip => {
@@ -37,6 +66,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const addOwnedTipBtn = document.getElementById('addOwnedTipBtn');
     const ownedTipsTbody = document.getElementById('ownedTipsTbody');
     const emptyTipsRow = document.getElementById('emptyTipsRow');
+    const addTipsActionRow = document.getElementById('addTipsActionRow');
 
     const ladderForm = document.getElementById('ladderForm');
     const ladderDataInput = document.getElementById('ladderDataInput');
@@ -65,7 +95,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const baseCashFlowYear = document.getElementById('baseCashFlowYear');
     if (baseCashFlowYear) {
         const currentYear = new Date().getFullYear();
-        // TIPS started around 1997, let's offer up to current + a little buffer
         for (let y = currentYear + 1; y >= 1997; y--) {
             const opt = document.createElement('option');
             opt.value = y;
@@ -115,91 +144,211 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // --- Dynamic Owned TIPS ---
-    addOwnedTipBtn.addEventListener('click', () => {
-        if (emptyTipsRow) emptyTipsRow.style.display = 'none';
+    // -----------------------------------------------------------------------
+    // --- Owned TIPS (new icon-based UX) ------------------------------------
+    // -----------------------------------------------------------------------
+
+    function updateEmptyRowVisibility() {
+        const confirmedRows = document.querySelectorAll('.owned-tip-row');
+        if (confirmedRows.length === 0 && emptyTipsRow) {
+            emptyTipsRow.style.display = 'table-row';
+        } else if (emptyTipsRow) {
+            emptyTipsRow.style.display = 'none';
+        }
+    }
+
+    /**
+     * Creates a READ-ONLY display row for a confirmed TIPS entry, with
+     * action icons: + (add new below), edit (pencil), delete (trash).
+     *
+     * @param {string} idType       - 'cusip' or 'coupon_maturity'
+     * @param {string} idValue      - the stored identifier value
+     * @param {string} accountType  - 'roth' | 'pretax' | 'taxable'
+     * @param {number|string} qty   - quantity
+     * @returns {HTMLTableRowElement}
+     */
+    function createDisplayRow(idType, idValue, accountType, qty) {
+        const { cusip, maturityCoupon } = resolveDisplayValues(idType, idValue);
 
         const tr = document.createElement('tr');
-        tr.className = 'owned-tip-row';
+        tr.className = 'owned-tip-row confirmed';
+        // Store raw data on the row for easy retrieval
+        tr.dataset.idType = idType;
+        tr.dataset.idValue = idValue;
+        tr.dataset.accountType = accountType;
+        tr.dataset.qty = qty;
+
         tr.innerHTML = `
-            <td>
-                <select class="tip-id-type" required>
-                    <option value="cusip">CUSIP</option>
-                    <option value="coupon_maturity">Coupon & Maturity Date</option>
-                </select>
+            <td class="tip-display-cusip">${cusip}</td>
+            <td class="tip-display-maturity">${maturityCoupon}</td>
+            <td class="tip-display-account">${accountTypeLabel(accountType)}</td>
+            <td class="tip-display-qty">${qty}</td>
+            <td style="white-space:nowrap;">
+                <button type="button" class="icon-btn icon-btn-add" title="Add new TIPS below">&#43;</button>
+                <button type="button" class="icon-btn icon-btn-edit" title="Edit this TIPS">&#9998;</button>
+                <button type="button" class="icon-btn icon-btn-delete" title="Delete this TIPS">&#128465;</button>
+            </td>
+        `;
+
+        // + button: insert a new entry form row below this display row
+        tr.querySelector('.icon-btn-add').addEventListener('click', () => {
+            // If there's already an open entry form right after, ignore
+            const next = tr.nextElementSibling;
+            if (next && next.classList.contains('tip-entry-row')) return;
+            const entryRow = createEntryRow(null, tr);
+            tr.insertAdjacentElement('afterend', entryRow);
+        });
+
+        // Edit button: replace this display row with an entry row pre-filled
+        tr.querySelector('.icon-btn-edit').addEventListener('click', () => {
+            const entryRow = createEntryRow(tr, null);
+            tr.replaceWith(entryRow);
+            updateEmptyRowVisibility();
+        });
+
+        // Delete button: remove row immediately
+        tr.querySelector('.icon-btn-delete').addEventListener('click', () => {
+            tr.remove();
+            updateEmptyRowVisibility();
+        });
+
+        return tr;
+    }
+
+    /**
+     * Creates an EDITABLE entry form row.
+     *
+     * @param {HTMLTableRowElement|null} editingRow  - the display row being edited (null = new)
+     * @param {HTMLTableRowElement|null} insertAfter - the display row to insert after (for add-below)
+     * @returns {HTMLTableRowElement}
+     */
+    function createEntryRow(editingRow, insertAfter) {
+        const prefill = editingRow ? {
+            idType: editingRow.dataset.idType,
+            idValue: editingRow.dataset.idValue,
+            accountType: editingRow.dataset.accountType,
+            qty: editingRow.dataset.qty
+        } : null;
+
+        const tr = document.createElement('tr');
+        tr.className = 'tip-entry-row';
+
+        tr.innerHTML = `
+            <td colspan="2">
+                <div style="display:flex; gap:0.4rem; align-items:center; flex-wrap:wrap;">
+                    <select class="tip-id-type" style="flex:0 0 auto; width:auto; padding:0.35rem 0.5rem; font-size:0.85rem;">
+                        <option value="cusip">CUSIP</option>
+                        <option value="coupon_maturity">Coupon &amp; Maturity</option>
+                    </select>
+                    <select class="tip-id-value" style="flex:1; min-width:160px; padding:0.35rem 0.5rem; font-size:0.85rem;">
+                        <option value="" disabled selected>Select a TIPS...</option>
+                    </select>
+                </div>
             </td>
             <td>
-                <select class="tip-id-value" required>
-                    <option value="" disabled selected>Select a TIP...</option>
-                </select>
-            </td>
-            <td>
-                <select class="tip-account-type" required>
+                <select class="tip-account-type" style="width:100%; padding:0.35rem 0.5rem; font-size:0.85rem;">
                     <option value="roth">Roth</option>
                     <option value="pretax">Pretax (e.g., 401k/IRA)</option>
                     <option value="taxable">Taxable Brokerage</option>
                 </select>
             </td>
             <td>
-                <input type="number" class="tip-quantity" placeholder="No. of $1k bonds" min="1" required>
+                <input type="number" class="tip-quantity" placeholder="No. of $1k bonds" min="1"
+                    style="width:100%; padding:0.35rem 0.5rem; font-size:0.85rem;">
             </td>
-            <td style="display: flex; gap: 0.5rem; justify-content: flex-start;">
-                <button type="button" class="btn btn-success btn-sm confirm-btn">Confirm</button>
-                <button type="button" class="btn btn-danger btn-sm remove-btn">Remove</button>
+            <td style="white-space:nowrap;">
+                <button type="button" class="icon-btn icon-btn-confirm" title="Confirm">&#10003;</button>
+                <button type="button" class="icon-btn icon-btn-cancel" title="Cancel">&#10005;</button>
             </td>
         `;
-        ownedTipsTbody.appendChild(tr);
 
         const idTypeSelect = tr.querySelector('.tip-id-type');
         const idValueSelect = tr.querySelector('.tip-id-value');
+        const accountTypeSelect = tr.querySelector('.tip-account-type');
+        const qtyInput = tr.querySelector('.tip-quantity');
 
-        // Initial populate
-        populateDropdown(idValueSelect, idTypeSelect.value);
+        // Populate dropdown based on initial type
+        populateDropdown(idValueSelect, idTypeSelect.value, prefill ? idTypeSelect.value === prefill.idType ? prefill.idValue : null : null);
 
-        // Update on change
+        // Pre-fill if editing
+        if (prefill) {
+            idTypeSelect.value = prefill.idType;
+            populateDropdown(idValueSelect, prefill.idType, prefill.idValue);
+            // Fallback if value isn't found
+            if (idValueSelect.value !== prefill.idValue) {
+                const opt = document.createElement('option');
+                opt.value = prefill.idValue;
+                opt.textContent = prefill.idValue + ' (Loaded)';
+                idValueSelect.appendChild(opt);
+                idValueSelect.value = prefill.idValue;
+            }
+            accountTypeSelect.value = prefill.accountType;
+            qtyInput.value = prefill.qty;
+        }
+
         idTypeSelect.addEventListener('change', () => {
             populateDropdown(idValueSelect, idTypeSelect.value);
         });
 
-        const inputsToLock = [idTypeSelect, idValueSelect, tr.querySelector('.tip-account-type'), tr.querySelector('.tip-quantity')];
-        const confirmBtn = tr.querySelector('.confirm-btn');
-
-        confirmBtn.addEventListener('click', () => {
-            // Basic HTML5 Validity Check on inputs before locking
-            const isValid = inputsToLock.every(input => input.checkValidity());
+        // Confirm (green check)
+        tr.querySelector('.icon-btn-confirm').addEventListener('click', () => {
+            // Validate
+            const fields = [idTypeSelect, idValueSelect, accountTypeSelect, qtyInput];
+            const isValid = fields.every(f => f.checkValidity() && f.value !== '');
             if (!isValid) {
-                // Trigger natural validation warnings
-                inputsToLock.forEach(input => input.reportValidity());
+                fields.forEach(f => f.reportValidity && f.reportValidity());
                 return;
             }
 
-            if (tr.classList.contains('confirmed')) {
-                // Edit Mode: Unlock
-                tr.classList.remove('confirmed');
-                confirmBtn.textContent = 'Confirm';
-                confirmBtn.classList.replace('btn-secondary', 'btn-success');
-                inputsToLock.forEach(input => input.disabled = false);
+            const newDisplayRow = createDisplayRow(
+                idTypeSelect.value,
+                idValueSelect.value,
+                accountTypeSelect.value,
+                qtyInput.value
+            );
+
+            if (editingRow) {
+                // We're editing — restore the original row position
+                tr.replaceWith(newDisplayRow);
             } else {
-                // Lock Mode
-                tr.classList.add('confirmed');
-                confirmBtn.textContent = 'Edit';
-                confirmBtn.classList.replace('btn-success', 'btn-secondary');
-                inputsToLock.forEach(input => input.disabled = true);
+                // New addition — replace the entry row with the display row
+                if (insertAfter) {
+                    // Inserted below a specific row
+                    tr.replaceWith(newDisplayRow);
+                } else {
+                    // Appended from the bottom add button
+                    tr.replaceWith(newDisplayRow);
+                }
             }
+            updateEmptyRowVisibility();
         });
 
-        tr.querySelector('.remove-btn').addEventListener('click', () => {
-            tr.remove();
-            if (document.querySelectorAll('.owned-tip-row').length === 0 && emptyTipsRow) {
-                emptyTipsRow.style.display = 'table-row';
+        // Cancel (red X)
+        tr.querySelector('.icon-btn-cancel').addEventListener('click', () => {
+            if (editingRow) {
+                // Restore the original display row
+                tr.replaceWith(editingRow);
+                // Re-attach event listeners (already attached on original)
+            } else {
+                tr.remove();
             }
+            updateEmptyRowVisibility();
         });
-    });
 
-    // Handle CSV loaded rows confirmation simulation
-    function triggerConfirm(tr) {
-        tr.querySelector('.confirm-btn').click();
+        return tr;
     }
+
+    // The persistent bottom "+" button (in addTipsActionRow)
+    addOwnedTipBtn.addEventListener('click', () => {
+        // Don't add another entry row if one is already open just before addTipsActionRow
+        const prev = addTipsActionRow.previousElementSibling;
+        if (prev && prev.classList.contains('tip-entry-row')) return;
+
+        const entryRow = createEntryRow(null, null);
+        // Insert the entry row just before the action row
+        ownedTipsTbody.insertBefore(entryRow, addTipsActionRow);
+        updateEmptyRowVisibility();
+    });
 
     // --- Form Submission / Gathering Data ---
     ladderForm.addEventListener('submit', (e) => {
@@ -224,16 +373,14 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         });
 
-        document.querySelectorAll('.owned-tip-row').forEach(row => {
-            // Only add tips that are confirmed
-            if (row.classList.contains('confirmed')) {
-                payload.owned_tips.push({
-                    id_type: row.querySelector('.tip-id-type').value,
-                    id_value: row.querySelector('.tip-id-value').value,
-                    account_type: row.querySelector('.tip-account-type').value,
-                    quantity: parseInt(row.querySelector('.tip-quantity').value, 10)
-                });
-            }
+        // Collect from confirmed display rows (have dataset stored on them)
+        document.querySelectorAll('.owned-tip-row.confirmed').forEach(row => {
+            payload.owned_tips.push({
+                id_type: row.dataset.idType,
+                id_value: row.dataset.idValue,
+                account_type: row.dataset.accountType,
+                quantity: parseInt(row.dataset.qty, 10)
+            });
         });
 
         ladderDataInput.value = JSON.stringify(payload);
@@ -261,16 +408,13 @@ document.addEventListener('DOMContentLoaded', function () {
             csvContent += `ADD_FLOW,${y},${a},,\n`;
         });
 
-        document.querySelectorAll('.owned-tip-row').forEach(row => {
-            if (row.classList.contains('confirmed')) {
-                const t = row.querySelector('.tip-id-type').value;
-                const v = row.querySelector('.tip-id-value').value;
-                const a = row.querySelector('.tip-account-type').value;
-                const q = row.querySelector('.tip-quantity').value;
-                // Escape values just in case
-                const safeV = v.includes(',') ? `"${v}"` : v;
-                csvContent += `OWNED_TIP,${t},${safeV},${a},${q}\n`;
-            }
+        document.querySelectorAll('.owned-tip-row.confirmed').forEach(row => {
+            const t = row.dataset.idType;
+            const v = row.dataset.idValue;
+            const a = row.dataset.accountType;
+            const q = row.dataset.qty;
+            const safeV = v.includes(',') ? `"${v}"` : v;
+            csvContent += `OWNED_TIP,${t},${safeV},${a},${q}\n`;
         });
 
         // Use modern File System Access API if supported
@@ -291,13 +435,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 await writable.close();
 
             } catch (err) {
-                // User may have cancelled the dialog (AbortError)
                 if (err.name !== 'AbortError') {
                     console.error('File save error:', err);
                 }
             }
         } else {
-            // Fallback for older browsers
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -321,20 +463,19 @@ document.addEventListener('DOMContentLoaded', function () {
 
             // Clear current dynamic rows
             additionalCashFlowsContainer.innerHTML = '';
-            document.querySelectorAll('.owned-tip-row').forEach(r => r.remove());
+            document.querySelectorAll('.owned-tip-row, .tip-entry-row').forEach(r => r.remove());
             if (emptyTipsRow) emptyTipsRow.style.display = 'table-row';
 
-            // Determine if this is the old format (headers or TYPE/PARAM prefixes) or the new simple format without headers.
             let isOldFormat = false;
             let startIndex = 0;
             if (lines.length > 0) {
                 const checkLine = lines[0].toUpperCase();
                 if (checkLine.startsWith('TYPE,')) {
                     isOldFormat = true;
-                    startIndex = 1; // skip header
+                    startIndex = 1;
                 } else if (checkLine.startsWith('PARAM,') || checkLine.startsWith('OWNED_TIP,') || checkLine.startsWith('ADD_FLOW,')) {
                     isOldFormat = true;
-                    startIndex = 0; // no header but old format
+                    startIndex = 0;
                 }
             }
 
@@ -342,7 +483,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 const line = lines[i].trim();
                 if (!line) continue;
 
-                // Handle quoted values basic parsing
                 let inQuotes = false;
                 let currentVal = '';
                 let vals = [];
@@ -382,61 +522,34 @@ document.addEventListener('DOMContentLoaded', function () {
                         created.querySelector('.flow-year').value = vals[1];
                         created.querySelector('.flow-amount').value = vals[2];
                     } else if (type === 'OWNED_TIP') {
-                        addOwnedTipBtn.click();
-                        const created = ownedTipsTbody.lastElementChild;
-                        const typeSelect = created.querySelector('.tip-id-type');
-                        const valueSelect = created.querySelector('.tip-id-value');
-
-                        typeSelect.value = vals[1];
-                        populateDropdown(valueSelect, vals[1], vals[2]);
-
-                        // Fallback in case value isn't found in options
-                        if (valueSelect.value !== vals[2]) {
-                            const opt = document.createElement('option');
-                            opt.value = vals[2];
-                            opt.textContent = vals[2] + ' (Loaded)';
-                            valueSelect.appendChild(opt);
-                            valueSelect.value = vals[2];
+                        // vals: OWNED_TIP, id_type, id_value, account_type, quantity
+                        let idType = vals[1];
+                        let idValue = vals[2];
+                        // Ensure idValue is in options; resolve CUSIP if needed
+                        if (idType === 'cusip') {
+                            const tip = tipsData.find(t => t.cusip === idValue);
+                            if (!tip) {
+                                // Keep as-is — will show with (Loaded) label
+                            }
                         }
-
-                        created.querySelector('.tip-account-type').value = vals[3];
-                        created.querySelector('.tip-quantity').value = vals[4];
-                        triggerConfirm(created);
+                        const displayRow = createDisplayRow(idType, idValue, vals[3], vals[4]);
+                        ownedTipsTbody.insertBefore(displayRow, addTipsActionRow);
+                        updateEmptyRowVisibility();
                     }
                 } else {
-                    // New CSV format: CUSIP, Quantity, Maturity Year (no headers)
+                    // Simple format: CUSIP, Quantity
                     if (vals.length >= 2) {
                         const cusip = vals[0].trim();
                         const quantity = vals[1].trim();
-
-                        addOwnedTipBtn.click();
-                        const created = ownedTipsTbody.lastElementChild;
-                        const typeSelect = created.querySelector('.tip-id-type');
-                        const valueSelect = created.querySelector('.tip-id-value');
-
-                        typeSelect.value = 'cusip';
-                        populateDropdown(valueSelect, 'cusip', cusip);
-
-                        // Fallback in case value isn't found in options
-                        if (valueSelect.value !== cusip) {
-                            const opt = document.createElement('option');
-                            opt.value = cusip;
-                            opt.textContent = cusip + ' (Loaded)';
-                            valueSelect.appendChild(opt);
-                            valueSelect.value = cusip;
-                        }
-
-                        // Set to pretax per requirements
-                        created.querySelector('.tip-account-type').value = 'pretax';
-                        created.querySelector('.tip-quantity').value = quantity;
-                        triggerConfirm(created);
+                        const displayRow = createDisplayRow('cusip', cusip, 'pretax', quantity);
+                        ownedTipsTbody.insertBefore(displayRow, addTipsActionRow);
+                        updateEmptyRowVisibility();
                     }
                 }
             }
         };
         reader.readAsText(file);
 
-        // Reset file input so same file can be loaded again if needed
         loadCsvBtn.value = '';
     });
 
@@ -471,35 +584,20 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
 
                 if (savedData.owned_tips && Array.isArray(savedData.owned_tips)) {
-                    // Ensure tips are loaded to populate selection boxes first
                     setTimeout(() => {
                         savedData.owned_tips.forEach(tip => {
-                            addOwnedTipBtn.click();
-                            const created = ownedTipsTbody.lastElementChild;
-                            const typeSelect = created.querySelector('.tip-id-type');
-                            const valueSelect = created.querySelector('.tip-id-value');
-
-                            typeSelect.value = tip.id_type;
-                            populateDropdown(valueSelect, tip.id_type, tip.id_value);
-
-                            // Fallback in case value isn't found in options
-                            if (valueSelect.value !== tip.id_value) {
-                                const opt = document.createElement('option');
-                                opt.value = tip.id_value;
-                                opt.textContent = tip.id_value + ' (Loaded)';
-                                valueSelect.appendChild(opt);
-                                valueSelect.value = tip.id_value;
-                            }
-
-                            created.querySelector('.tip-account-type').value = tip.account_type;
-                            created.querySelector('.tip-quantity').value = tip.quantity;
-                            triggerConfirm(created);
+                            const displayRow = createDisplayRow(tip.id_type, tip.id_value, tip.account_type, tip.quantity);
+                            ownedTipsTbody.insertBefore(displayRow, addTipsActionRow);
                         });
-                    }, 50); // slight delay to guarantee tipsData has been parsed natively
+                        updateEmptyRowVisibility();
+                    }, 50);
                 }
             }
         } catch (e) {
             console.error("Failed to parse saved ladder data", e);
         }
     }
+
+    // Initial visibility check
+    updateEmptyRowVisibility();
 });

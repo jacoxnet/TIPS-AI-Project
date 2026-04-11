@@ -111,14 +111,13 @@
         <div>
             <div class="flex justify-between items-center mb-4">
                 <h3 style="margin-bottom:0;">3. Currently Owned TIPS</h3>
-                <button type="button" class="btn btn-secondary btn-sm" id="addOwnedTipBtn">+ Add Owned TIPS</button>
             </div>
             <div class="table-container mb-4">
                 <table id="ownedTipsTable">
                     <thead>
                         <tr>
-                            <th>Identification Method</th>
-                            <th>Value / ID</th>
+                            <th>CUSIP</th>
+                            <th>Maturity / Coupon</th>
                             <th>Account Type</th>
                             <th>Quantity ($1000 blocks)</th>
                             <th>Action</th>
@@ -127,8 +126,14 @@
                     <tbody id="ownedTipsTbody">
                         <!-- Dynamic rows go here -->
                         <tr id="emptyTipsRow">
-                            <td colspan="5" class="text-center text-secondary">No current TIPS added. Click "+ Add Owned
-                                TIP" to begin.</td>
+                            <td colspan="5" class="text-center text-secondary">No TIPS added yet. Use the
+                                <strong>+</strong> button in the Action column to add a TIPS.</td>
+                        </tr>
+                        <!-- Persistent "add" row at the bottom -->
+                        <tr id="addTipsActionRow">
+                            <td colspan="5" style="text-align:center; padding: 0.5rem;">
+                                <button type="button" class="icon-btn icon-btn-add" id="addOwnedTipBtn" title="Add TIPS">&#43;</button>
+                            </td>
                         </tr>
                     </tbody>
                 </table>
@@ -146,5 +151,5 @@
 {% block extra_js %}
 {{ tips_data|json_script:"tips-data" }}
 {{ ladder_data|json_script:"saved-ladder-data" }}
-<script src="{% static 'js/data_entry.js' %}?v=3"></script>
+<script src="{% static 'js/data_entry.js' %}?v=4"></script>
 {% endblock %}
