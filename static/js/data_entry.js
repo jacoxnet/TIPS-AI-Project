@@ -91,6 +91,11 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    const startYearInput = document.getElementById('startYear');
+    if (startYearInput) {
+        startYearInput.min = new Date().getFullYear();
+    }
+
     // --- Populate As-Of Date Year Dropdown ---
     const baseCashFlowYear = document.getElementById('baseCashFlowYear');
     if (baseCashFlowYear) {
@@ -512,7 +517,14 @@ document.addEventListener('DOMContentLoaded', function () {
                         if (key === 'assumed_inflation_rate' && document.getElementById('assumedInflationRate')) {
                             document.getElementById('assumedInflationRate').value = val;
                         }
-                        if (key === 'start_year') document.getElementById('startYear').value = val;
+                        if (key === 'start_year') {
+                            let loadedYear = parseInt(val, 10);
+                            const currentYear = new Date().getFullYear();
+                            if (loadedYear < currentYear) {
+                                loadedYear = currentYear;
+                            }
+                            document.getElementById('startYear').value = loadedYear;
+                        }
                         if (key === 'end_year') document.getElementById('endYear').value = val;
                         if (key === 'base_cash_flow') document.getElementById('baseCashFlow').value = val;
                         if (key === 'base_cash_flow_date') setBaseCashFlowDate(val);
@@ -532,18 +544,46 @@ document.addEventListener('DOMContentLoaded', function () {
                                 // Keep as-is — will show with (Loaded) label
                             }
                         }
-                        const displayRow = createDisplayRow(idType, idValue, vals[3], vals[4]);
-                        ownedTipsTbody.insertBefore(displayRow, addTipsActionRow);
-                        updateEmptyRowVisibility();
+
+                        let skip = false;
+                        const currentYear = new Date().getFullYear();
+                        const resolved = resolveDisplayValues(idType, idValue);
+                        if (resolved.maturityCoupon && resolved.maturityCoupon !== '—') {
+                            const maturityDate = resolved.maturityCoupon.split(' / ')[0];
+                            const maturityYear = parseInt(maturityDate.substring(0, 4), 10);
+                            if (!isNaN(maturityYear) && maturityYear < currentYear) {
+                                skip = true;
+                            }
+                        }
+
+                        if (!skip) {
+                            const displayRow = createDisplayRow(idType, idValue, vals[3], vals[4]);
+                            ownedTipsTbody.insertBefore(displayRow, addTipsActionRow);
+                            updateEmptyRowVisibility();
+                        }
                     }
                 } else {
                     // Simple format: CUSIP, Quantity
                     if (vals.length >= 2) {
                         const cusip = vals[0].trim();
                         const quantity = vals[1].trim();
-                        const displayRow = createDisplayRow('cusip', cusip, 'pretax', quantity);
-                        ownedTipsTbody.insertBefore(displayRow, addTipsActionRow);
-                        updateEmptyRowVisibility();
+
+                        let skip = false;
+                        const currentYear = new Date().getFullYear();
+                        const resolved = resolveDisplayValues('cusip', cusip);
+                        if (resolved.maturityCoupon && resolved.maturityCoupon !== '—') {
+                            const maturityDate = resolved.maturityCoupon.split(' / ')[0];
+                            const maturityYear = parseInt(maturityDate.substring(0, 4), 10);
+                            if (!isNaN(maturityYear) && maturityYear < currentYear) {
+                                skip = true;
+                            }
+                        }
+
+                        if (!skip) {
+                            const displayRow = createDisplayRow('cusip', cusip, 'pretax', quantity);
+                            ownedTipsTbody.insertBefore(displayRow, addTipsActionRow);
+                            updateEmptyRowVisibility();
+                        }
                     }
                 }
             }
@@ -569,7 +609,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (savedData.assumed_inflation_rate !== undefined && document.getElementById('assumedInflationRate')) {
                     document.getElementById('assumedInflationRate').value = savedData.assumed_inflation_rate;
                 }
-                if (savedData.start_year !== undefined) document.getElementById('startYear').value = savedData.start_year;
+                if (savedData.start_year !== undefined) {
+                    let loadedYear = parseInt(savedData.start_year, 10);
+                    const currentYear = new Date().getFullYear();
+                    if (loadedYear < currentYear) {
+                        loadedYear = currentYear;
+                    }
+                    document.getElementById('startYear').value = loadedYear;
+                }
                 if (savedData.end_year !== undefined) document.getElementById('endYear').value = savedData.end_year;
                 if (savedData.base_cash_flow !== undefined) document.getElementById('baseCashFlow').value = savedData.base_cash_flow;
                 if (savedData.base_cash_flow_date !== undefined) setBaseCashFlowDate(savedData.base_cash_flow_date);
