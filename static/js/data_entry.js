@@ -23,9 +23,13 @@ document.addEventListener('DOMContentLoaded', function () {
             const parts = idValue.split(',');
             const rate = parts[0];
             const maturity = parts[1] || '';
+            // Normalize the rate to a float for comparison so "0.125000%" == "0.125%"
+            const rateNum = parseFloat(rate);
             const tip = tipsData.find(t => {
-                const val = `${t.interest_rate}%,${t.maturity_date}`;
-                return val === idValue;
+                const tRateNum = parseFloat(t.interest_rate);
+                return !isNaN(tRateNum) && !isNaN(rateNum) &&
+                       Math.abs(tRateNum - rateNum) < 1e-6 &&
+                       t.maturity_date === maturity;
             });
             const cusip = tip ? tip.cusip : '—';
             const maturityCoupon = `${maturity} / ${rate}`;
