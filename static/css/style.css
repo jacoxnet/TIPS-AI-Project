@@ -424,3 +424,89 @@ tbody tr:hover {
 .text-danger {
   color: var(--danger);
 }
+
+/* Modal Styles */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+}
+
+.modal-content {
+  background-color: var(--bg-secondary);
+  margin: 10% auto;
+  padding: 2rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  width: 80%;
+  max-width: 800px;
+  box-shadow: var(--shadow-lg);
+  position: relative;
+  color: var(--text-primary);
+}
+
+.close-modal {
+  color: var(--text-secondary);
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: color var(--transition-fast);
+}
+
+.close-modal:hover,
+.close-modal:focus {
+  color: var(--danger);
+  text-decoration: none;
+}
+
+.how-to-link {
+  color: var(--accent-primary);
+  text-decoration: none;
+  font-weight: 500;
+  margin-bottom: 1rem;
+  display: inline-block;
+  transition: color var(--transition-fast);
+}
+
+.how-to-link:hover {
+  color: var(--accent-hover);
+  text-decoration: underline;
+}
+
+/* Modal Markdown Typography styling */
+.markdown-body h1, .markdown-body h2 {
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 0.5rem;
+}
+.markdown-body ul {
+    margin-left: 2rem;
+    margin-bottom: 1rem;
+}
+.markdown-body li {
+    margin-bottom: 0.5rem;
+}
+.markdown-body p {
+    margin-bottom: 1rem;
+}
+.markdown-body pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    background-color: var(--bg-primary);
+    padding: 1rem;
+    border-radius: var(--radius-md);
+    overflow-x: auto;
+}
+.markdown-body code {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
