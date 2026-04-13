@@ -10,11 +10,11 @@
 
     - the desired real after-tax annual cash flow, 
 
-    - the month and year in which such real cash flow is first determined (the “as-of date”), and
+    - the month and year in which such real cash flow is first determined (the "as-of date"), and
 
     - the parameters for any years for which there should be a different amount of real after-tax cash flow (specified using dollars from the as-of date).
 
-- Click the ""Calculate Ladder Output"" button to see, on the “View Results” page, any deficits or surpluses in the existing ladder.    
+- Click the "Calculate Ladder Output" button to see, on the "View Results" page, any deficits or surpluses in the existing ladder.    
 
 ## Additional Explanations:
 
@@ -28,7 +28,7 @@
 
 - There is an optional tax adjustment for the taxes on the phantom (or real) income on the annual principal adjustments to all TIPS held in a taxable brokerage account.  
 
-    - This adjustment is made for only TIPS held in a taxable brokerage account, because there are no taxes on principal adjustments for TIPS held in a Roth account and the taxes on principal adjustments for TIPS held in a pretax account only occur in the year the TIPS matures and the proceeds are removed from the pretax account (which taxes are already included in the basic adjustments described above)."
+    - This adjustment is made for only TIPS held in a taxable brokerage account, because there are no taxes on principal adjustments for TIPS held in a Roth account and the taxes on principal adjustments for TIPS held in a pretax account only occur in the year the TIPS matures and the proceeds are removed from the pretax account (which taxes are already included in the basic adjustments described above).
 
 - Note that, if uploading a csv file from tipsladder.com or certain other sources that do not specify which types of accounts hold the various TIPS, this app will assume that the TIPS are held in a pretax acount. 
 
