@@ -1,6 +1,10 @@
 import requests
 import datetime
+from zoneinfo import ZoneInfo
 import os
+
+# set timezone to New York
+TIMEZONE = ZoneInfo("America/New_York")
 
 # This is a hard-coded CPI value for October 2025 which replaces the missing data
 # point in the FRED data due to the government shutdown. This value is midway between
@@ -19,7 +23,8 @@ def fetch_tips_data():
     """
 
     # if already downloaded for today, don't do anything
-    if Tips.download_date == datetime.date.today().isoformat():
+    # use the time zone in TIMEZONE
+    if Tips.download_date == datetime.datetime.now(tz=TIMEZONE).date().isoformat():
         print (f"DEBUG: TIPS data already downloaded for today ({Tips.download_date}). Skipping fetch.")
         return
     Tips.all_tips = []
