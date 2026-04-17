@@ -91,7 +91,6 @@ def calculate_ladder(ladderp):
             if tip['maturity_year'] < y:
                 continue
                 
-            uninflated_principal = 1000 * tip['quantity']
             inflated_principal = tip['inflation_adjusted_value'] * tip['quantity']
             annual_coupon = inflated_principal * tip['interest_rate']
             
@@ -104,7 +103,7 @@ def calculate_ladder(ladderp):
                 
             # Tax effect on inflation-adjusted principal in taxable accounts
             if tax_effect_inflation and tip['account_type'] == 'taxable':
-                row['principal_adjustment'] += (inflated_principal - uninflated_principal)
+                row['principal_adjustment'] += inflated_principal * assumed_inflation_rate
                 row['tax_drag'] += inflated_principal * assumed_inflation_rate * tax_rate
                 
             # If matures this year, add principal
