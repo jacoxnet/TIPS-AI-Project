@@ -3,7 +3,7 @@ import datetime
 from zoneinfo import ZoneInfo
 import os
 
-# set timezone to New York
+# set timezone to New York for purpose of downloaded date 
 TIMEZONE = ZoneInfo("America/New_York")
 
 # This is a hard-coded CPI value for October 2025 which replaces the missing data
@@ -57,7 +57,7 @@ def fetch_tips_data():
             seen_cusips.add(cusip)
     try:
         # Fetch detailed data for the current date to get index ratios
-        today = datetime.date.today().isoformat()
+        today = datetime.datetime.now(tz=TIMEZONE).date().isoformat()
         detail_url = "https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v1/accounting/od/tips_cpi_data_detail"
         detail_params = {
             "filter": f"index_date:eq:{today}",
@@ -79,7 +79,7 @@ def fetch_tips_data():
     # Sort the TIPS by maturity date and set the download date
     Tips.all_tips.sort(key=lambda x: x.maturity_date)
     
-    Tips.download_date = datetime.date.today().isoformat()
+    Tips.download_date = datetime.datetime.now(tz=TIMEZONE).date().isoformat()
     
     return
 
@@ -98,7 +98,7 @@ def fetch_cpi_data(as_of_date):
     if len(as_of_date) == 7:
         as_of_date += "-01"
 
-    today = datetime.date.today().isoformat()
+    today = datetime.datetime.now(tz=TIMEZONE).date().isoformat()
     if CpiData.download_date != today:
         CpiData.download_date = today
         CpiData.cpi_cache = {}

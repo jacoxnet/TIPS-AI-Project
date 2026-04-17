@@ -83,6 +83,7 @@ def calculate_ladder(ladderp):
             'coupon_income': 0.0,
             'principal_income': 0.0,
             'tax_drag': 0.0,
+            'principal_adjustment': 0.0,
         }
         
         for tip in owned_tips:
@@ -103,6 +104,7 @@ def calculate_ladder(ladderp):
                 
             # Tax effect on inflation-adjusted principal in taxable accounts
             if tax_effect_inflation and tip['account_type'] == 'taxable':
+                row['principal_adjustment'] += (inflated_principal - uninflated_principal)
                 row['tax_drag'] += inflated_principal * assumed_inflation_rate * tax_rate
                 
             # If matures this year, add principal

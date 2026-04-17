@@ -57,6 +57,7 @@ def ladder_display_view(request):
                 try:
                     results = calculate_ladder(ladderp)
                     context['ladder_years'] = results
+                    context['tax_effect_inflation'] = getattr(ladderp, 'tax_effect_inflation', False)
                 except Exception as e:
                     context['error'] = str(e)
         else:
@@ -69,6 +70,7 @@ def ladder_display_view(request):
             if ladderp.start_year != 0:
                 results = calculate_ladder(ladderp)
                 context['ladder_years'] = results
+                context['tax_effect_inflation'] = getattr(ladderp, 'tax_effect_inflation', False)
 
     if 'ladder_years' in context:
         total_balance = sum(row['balance'] for row in context['ladder_years'])
