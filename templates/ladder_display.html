@@ -28,7 +28,7 @@
                     <th class="text-right">Coupon Income</th>
                     <th class="text-right">Principal Maturing</th>
                     {% if tax_effect_inflation %}
-                    <th class="text-right">Income on Principal Adjustment</th>
+                    <th class="text-right">Phantom Income on Principal Adjustment</th>
                     {% endif %}
                     <th class="text-right text-danger">Calculated Tax Drag</th>
                     <th class="text-right" style="border-left: 2px solid var(--border-color);">Net Real After-Tax Cash
@@ -61,11 +61,12 @@
             </tbody>
             <tfoot>
                 <tr style="border-top: 2px solid var(--border-color);">
-                    <td colspan="{% if tax_effect_inflation %}7{% else %}6{% endif %}" class="text-right"><strong>TOTAL</strong></td>
+                    <td colspan="{% if tax_effect_inflation %}7{% else %}6{% endif %}" class="text-right">
+                        <strong>TOTAL</strong></td>
                     <td class="text-right"
                         style="font-weight:700; color: {% if total_balance > 0 %}var(--success){% elif total_balance < 0 %}var(--danger){% else %}inherit{% endif %}; white-space: nowrap;">
-                        {% if total_balance > 0 %} ${{ total_balance|floatformat:2|intcomma }} {% elif total_balance < 0 %}
-                            -${{ total_shortfall|floatformat:2|intcomma }} {% else %} $0.00 {% endif %} </td>
+                        {% if total_balance > 0 %} ${{ total_balance|floatformat:2|intcomma }} {% elif total_balance < 0
+                            %} -${{ total_shortfall|floatformat:2|intcomma }} {% else %} $0.00 {% endif %} </td>
                 </tr>
             </tfoot>
         </table>
