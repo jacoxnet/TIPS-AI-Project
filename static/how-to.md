@@ -14,7 +14,9 @@
 
     - the parameters for any years for which there should be a different amount of real after-tax cash flow (specified using dollars from the as-of date).
 
-- Click the "Calculate Ladder Output" button to see, on the "View Results" page, any deficits or surpluses in the existing ladder.    
+- Click the "Calculate Ladder Output" button to see, on the "View Results" page, any deficits or surpluses in the existing ladder.
+
+- You can modify TIPS you had previously entered on the "Build Ladder" page.  To save the modification, you must click the check mark icon in the "Action" column.  If the check mark is not clicked, the changes will not be saved.    
 
 ## Additional Explanations:
 
