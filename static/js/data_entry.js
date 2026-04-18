@@ -363,6 +363,9 @@ document.addEventListener('DOMContentLoaded', function () {
     ladderForm.addEventListener('submit', (e) => {
         e.preventDefault();
 
+        // Automatically cancel any unconfirmed edits/additions before submission
+        document.querySelectorAll('.tip-entry-row .icon-btn-cancel').forEach(btn => btn.click());
+
         const payload = {
             tax_rate: parseFloat(document.getElementById('taxRate').value),
             start_year: parseInt(document.getElementById('startYear').value, 10),
