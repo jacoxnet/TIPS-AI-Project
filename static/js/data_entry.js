@@ -17,7 +17,8 @@ document.addEventListener('DOMContentLoaded', function () {
             const tip = tipsData.find(t => t.cusip === idValue);
             const cusip = idValue;
             const maturityCoupon = tip ? `${tip.maturity_date} / ${tip.interest_rate}%` : '—';
-            return { cusip, maturityCoupon };
+            const datedDate = tip ? tip.dated_date : null;
+            return { cusip, maturityCoupon, datedDate };
         } else {
             // idValue is "rate%,maturity_date"
             const parts = idValue.split(',');
@@ -33,7 +34,8 @@ document.addEventListener('DOMContentLoaded', function () {
             });
             const cusip = tip ? tip.cusip : '—';
             const maturityCoupon = `${maturity} / ${rate}`;
-            return { cusip, maturityCoupon };
+            const datedDate = tip ? tip.dated_date : null;
+            return { cusip, maturityCoupon, datedDate };
         }
     }
 
@@ -514,6 +516,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             }
 
+            let foundStartYear = false;
+            let foundEndYear = false;
+            const loadedDatedYears = [];
+            const loadedMaturityYears = [];
+
             for (let i = startIndex; i < lines.length; i++) {
                 const line = lines[i].trim();
                 if (!line) continue;
@@ -548,6 +555,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             document.getElementById('assumedInflationRate').value = val;
                         }
                         if (key === 'start_year') {
+                            foundStartYear = true;
                             let loadedYear = parseInt(val, 10);
                             const currentYear = new Date().getFullYear();
                             if (loadedYear < currentYear) {
@@ -555,7 +563,10 @@ document.addEventListener('DOMContentLoaded', function () {
                             }
                             document.getElementById('startYear').value = loadedYear;
                         }
-                        if (key === 'end_year') document.getElementById('endYear').value = val;
+                        if (key === 'end_year') {
+                            foundEndYear = true;
+                            document.getElementById('endYear').value = val;
+                        }
                         if (key === 'base_cash_flow') document.getElementById('baseCashFlow').value = val;
                         if (key === 'base_cash_flow_date') setBaseCashFlowDate(val);
                         if (key === 'use_pretax' && usePretaxCheckbox) {
@@ -582,9 +593,10 @@ document.addEventListener('DOMContentLoaded', function () {
                         let skip = false;
                         const currentYear = new Date().getFullYear();
                         const resolved = resolveDisplayValues(idType, idValue);
+                        let maturityYear = NaN;
                         if (resolved.maturityCoupon && resolved.maturityCoupon !== '—') {
                             const maturityDate = resolved.maturityCoupon.split(' / ')[0];
-                            const maturityYear = parseInt(maturityDate.substring(0, 4), 10);
+                            maturityYear = parseInt(maturityDate.substring(0, 4), 10);
                             if (!isNaN(maturityYear) && maturityYear < currentYear) {
                                 skip = true;
                             }
@@ -594,6 +606,11 @@ document.addEventListener('DOMContentLoaded', function () {
                             const displayRow = createDisplayRow(idType, idValue, vals[3], vals[4]);
                             ownedTipsTbody.insertBefore(displayRow, addTipsActionRow);
                             updateEmptyRowVisibility();
+                            if (!isNaN(maturityYear)) loadedMaturityYears.push(maturityYear);
+                            if (resolved.datedDate) {
+                                const dYear = parseInt(resolved.datedDate.substring(0, 4), 10);
+                                if (!isNaN(dYear)) loadedDatedYears.push(dYear);
+                            }
                         }
                     }
                 } else {
@@ -605,9 +622,10 @@ document.addEventListener('DOMContentLoaded', function () {
                         let skip = false;
                         const currentYear = new Date().getFullYear();
                         const resolved = resolveDisplayValues('cusip', cusip);
+                        let maturityYear = NaN;
                         if (resolved.maturityCoupon && resolved.maturityCoupon !== '—') {
                             const maturityDate = resolved.maturityCoupon.split(' / ')[0];
-                            const maturityYear = parseInt(maturityDate.substring(0, 4), 10);
+                            maturityYear = parseInt(maturityDate.substring(0, 4), 10);
                             if (!isNaN(maturityYear) && maturityYear < currentYear) {
                                 skip = true;
                             }
@@ -617,9 +635,23 @@ document.addEventListener('DOMContentLoaded', function () {
                             const displayRow = createDisplayRow('cusip', cusip, 'pretax', quantity);
                             ownedTipsTbody.insertBefore(displayRow, addTipsActionRow);
                             updateEmptyRowVisibility();
+                            if (!isNaN(maturityYear)) loadedMaturityYears.push(maturityYear);
+                            if (resolved.datedDate) {
+                                const dYear = parseInt(resolved.datedDate.substring(0, 4), 10);
+                                if (!isNaN(dYear)) loadedDatedYears.push(dYear);
+                            }
                         }
                     }
                 }
+            }
+
+            // Pre-populate start/end year from loaded TIPS when not set by PARAM rows
+            if (!foundStartYear && loadedDatedYears.length > 0) {
+                const currentYear = new Date().getFullYear();
+                document.getElementById('startYear').value = Math.max(Math.min(...loadedDatedYears), currentYear);
+            }
+            if (!foundEndYear && loadedMaturityYears.length > 0) {
+                document.getElementById('endYear').value = Math.max(...loadedMaturityYears);
             }
         };
         reader.readAsText(file);
