@@ -1,11 +1,15 @@
 import json
-from django.http import HttpResponseRedirect
+import os
+from django.http import HttpResponseRedirect, JsonResponse
 from django.urls import reverse
 from django.shortcuts import render
+from django.conf import settings
 from .fetch import fetch_tips_data
 from .ladder_calc import calculate_ladder
 from .tipsdata import Ladder_values, Tips
 from .tinit import clear_data
+
+SAMPLE_CSV_FILE = 'test_sample.csv'
 
 def init_view(request):
     clear_data(request)
@@ -58,6 +62,7 @@ def ladder_display_view(request):
                     results = calculate_ladder(ladderp)
                     context['ladder_years'] = results
                     context['tax_effect_inflation'] = getattr(ladderp, 'tax_effect_inflation', False)
+                    context['use_pretax'] = getattr(ladderp, 'use_pretax', False)
                 except Exception as e:
                     context['error'] = str(e)
         else:
@@ -71,6 +76,7 @@ def ladder_display_view(request):
                 results = calculate_ladder(ladderp)
                 context['ladder_years'] = results
                 context['tax_effect_inflation'] = getattr(ladderp, 'tax_effect_inflation', False)
+                context['use_pretax'] = getattr(ladderp, 'use_pretax', False)
 
     if 'ladder_years' in context:
         total_balance = sum(row['balance'] for row in context['ladder_years'])
@@ -84,3 +90,11 @@ def clear_ladder_view(request):
         del request.session['ladder_data']
     return HttpResponseRedirect(reverse('data_entry'))
 
+def sample_csv_view(request):
+    csv_path = os.path.join(settings.BASE_DIR, 'csv files', SAMPLE_CSV_FILE)
+    try:
+        with open(csv_path, 'r') as f:
+            content = f.read()
+        return JsonResponse({'csv_content': content})
+    except FileNotFoundError:
+        return JsonResponse({'error': 'Sample file not found'}, status=404)

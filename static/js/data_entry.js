@@ -95,6 +95,27 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // --- Use Pre-Tax Cash Flow checkbox ---
+    const usePretaxCheckbox = document.getElementById('usePretax');
+    const asOfDateGroup = document.getElementById('asOfDateGroup');
+    const baseCashFlowMonthEl = document.getElementById('baseCashFlowMonth');
+    const baseCashFlowYearEl = document.getElementById('baseCashFlowYear');
+
+    function updatePretaxState() {
+        if (usePretaxCheckbox && asOfDateGroup) {
+            const isChecked = usePretaxCheckbox.checked;
+            asOfDateGroup.style.opacity = isChecked ? '0.4' : '1';
+            asOfDateGroup.style.pointerEvents = isChecked ? 'none' : 'auto';
+            if (baseCashFlowMonthEl) baseCashFlowMonthEl.required = !isChecked;
+            if (baseCashFlowYearEl) baseCashFlowYearEl.required = !isChecked;
+        }
+    }
+
+    if (usePretaxCheckbox) {
+        usePretaxCheckbox.addEventListener('change', updatePretaxState);
+        updatePretaxState();
+    }
+
     const startYearInput = document.getElementById('startYear');
     if (startYearInput) {
         startYearInput.min = new Date().getFullYear();
@@ -374,6 +395,7 @@ document.addEventListener('DOMContentLoaded', function () {
             base_cash_flow_date: getBaseCashFlowDate(),
             tax_effect_inflation: document.getElementById('taxEffectInflation') && document.getElementById('taxEffectInflation').value === 'yes',
             assumed_inflation_rate: (document.getElementById('taxEffectInflation') && document.getElementById('taxEffectInflation').value === 'yes') ? parseFloat(document.getElementById('assumedInflationRate').value || 0) : 0.0,
+            use_pretax: usePretaxCheckbox ? usePretaxCheckbox.checked : false,
             additional_flows: [],
             owned_tips: []
         };
@@ -413,6 +435,7 @@ document.addEventListener('DOMContentLoaded', function () {
         csvContent += `PARAM,end_year,${document.getElementById('endYear').value},,\n`;
         csvContent += `PARAM,base_cash_flow,${document.getElementById('baseCashFlow').value},,\n`;
         csvContent += `PARAM,base_cash_flow_date,${getBaseCashFlowDate()},,\n`;
+        csvContent += `PARAM,use_pretax,${usePretaxCheckbox ? usePretaxCheckbox.checked : false},,\n`;
 
         document.querySelectorAll('.add-flow-row').forEach(row => {
             const y = row.querySelector('.flow-year').value;
@@ -535,6 +558,10 @@ document.addEventListener('DOMContentLoaded', function () {
                         if (key === 'end_year') document.getElementById('endYear').value = val;
                         if (key === 'base_cash_flow') document.getElementById('baseCashFlow').value = val;
                         if (key === 'base_cash_flow_date') setBaseCashFlowDate(val);
+                        if (key === 'use_pretax' && usePretaxCheckbox) {
+                            usePretaxCheckbox.checked = val === 'true';
+                            updatePretaxState();
+                        }
                     } else if (type === 'ADD_FLOW') {
                         addCashFlowBtn.click();
                         const created = additionalCashFlowsContainer.lastElementChild;
@@ -600,6 +627,123 @@ document.addEventListener('DOMContentLoaded', function () {
         loadCsvBtn.value = '';
     });
 
+    // --- Sample CSV Load functionality ---
+    const sampleCsvBtn = document.getElementById('sampleCsvBtn');
+    if (sampleCsvBtn) {
+        sampleCsvBtn.addEventListener('click', () => {
+            fetch('/sample-csv/')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert('Error loading sample: ' + data.error);
+                        return;
+                    }
+                    // Simulate a file load by feeding CSV content through the same parsing logic
+                    const text = data.csv_content;
+                    const lines = text.split('\n');
+
+                    // Clear current dynamic rows
+                    additionalCashFlowsContainer.innerHTML = '';
+                    document.querySelectorAll('.owned-tip-row, .tip-entry-row').forEach(r => r.remove());
+                    if (emptyTipsRow) emptyTipsRow.style.display = 'table-row';
+
+                    let isOldFormat = false;
+                    let startIndex = 0;
+                    if (lines.length > 0) {
+                        const checkLine = lines[0].toUpperCase();
+                        if (checkLine.startsWith('TYPE,')) {
+                            isOldFormat = true;
+                            startIndex = 1;
+                        } else if (checkLine.startsWith('PARAM,') || checkLine.startsWith('OWNED_TIP,') || checkLine.startsWith('ADD_FLOW,')) {
+                            isOldFormat = true;
+                            startIndex = 0;
+                        }
+                    }
+
+                    for (let i = startIndex; i < lines.length; i++) {
+                        const line = lines[i].trim();
+                        if (!line) continue;
+
+                        let inQuotes = false;
+                        let currentVal = '';
+                        let vals = [];
+                        for (let j = 0; j < line.length; j++) {
+                            const char = line[j];
+                            if (char === '"') {
+                                inQuotes = !inQuotes;
+                            } else if (char === ',' && !inQuotes) {
+                                vals.push(currentVal);
+                                currentVal = '';
+                            } else {
+                                currentVal += char;
+                            }
+                        }
+                        vals.push(currentVal);
+
+                        if (isOldFormat) {
+                            const type = vals[0];
+                            if (type === 'PARAM') {
+                                const key = vals[1];
+                                const val = vals[2];
+                                if (key === 'tax_rate') document.getElementById('taxRate').value = val;
+                                if (key === 'tax_effect_inflation' && document.getElementById('taxEffectInflation')) {
+                                    document.getElementById('taxEffectInflation').value = val === 'true' ? 'yes' : 'no';
+                                    document.getElementById('taxEffectInflation').dispatchEvent(new Event('change'));
+                                }
+                                if (key === 'assumed_inflation_rate' && document.getElementById('assumedInflationRate')) {
+                                    document.getElementById('assumedInflationRate').value = val;
+                                }
+                                if (key === 'start_year') {
+                                    let loadedYear = parseInt(val, 10);
+                                    const currentYear = new Date().getFullYear();
+                                    if (loadedYear < currentYear) {
+                                        loadedYear = currentYear;
+                                    }
+                                    document.getElementById('startYear').value = loadedYear;
+                                }
+                                if (key === 'end_year') document.getElementById('endYear').value = val;
+                                if (key === 'base_cash_flow') document.getElementById('baseCashFlow').value = val;
+                                if (key === 'base_cash_flow_date') setBaseCashFlowDate(val);
+                                if (key === 'use_pretax' && usePretaxCheckbox) {
+                                    usePretaxCheckbox.checked = val === 'true';
+                                    updatePretaxState();
+                                }
+                            } else if (type === 'ADD_FLOW') {
+                                addCashFlowBtn.click();
+                                const created = additionalCashFlowsContainer.lastElementChild;
+                                created.querySelector('.flow-year').value = vals[1];
+                                created.querySelector('.flow-amount').value = vals[2];
+                            } else if (type === 'OWNED_TIP') {
+                                let idType = vals[1];
+                                let idValue = vals[2];
+
+                                let skip = false;
+                                const currentYear = new Date().getFullYear();
+                                const resolved = resolveDisplayValues(idType, idValue);
+                                if (resolved.maturityCoupon && resolved.maturityCoupon !== '—') {
+                                    const maturityDate = resolved.maturityCoupon.split(' / ')[0];
+                                    const maturityYear = parseInt(maturityDate.substring(0, 4), 10);
+                                    if (!isNaN(maturityYear) && maturityYear < currentYear) {
+                                        skip = true;
+                                    }
+                                }
+
+                                if (!skip) {
+                                    const displayRow = createDisplayRow(idType, idValue, vals[3], vals[4]);
+                                    ownedTipsTbody.insertBefore(displayRow, addTipsActionRow);
+                                    updateEmptyRowVisibility();
+                                }
+                            }
+                        }
+                    }
+                })
+                .catch(err => {
+                    console.error('Error loading sample CSV:', err);
+                    alert('Failed to load sample ladder data.');
+                });
+        });
+    }
+
     // --- Load Saved Session Data ---
     const savedDataElement = document.getElementById('saved-ladder-data');
     if (savedDataElement && savedDataElement.textContent && savedDataElement.textContent !== "{}") {
@@ -627,6 +771,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (savedData.end_year !== undefined) document.getElementById('endYear').value = savedData.end_year;
                 if (savedData.base_cash_flow !== undefined) document.getElementById('baseCashFlow').value = savedData.base_cash_flow;
                 if (savedData.base_cash_flow_date !== undefined) setBaseCashFlowDate(savedData.base_cash_flow_date);
+                if (savedData.use_pretax !== undefined && usePretaxCheckbox) {
+                    usePretaxCheckbox.checked = savedData.use_pretax;
+                    updatePretaxState();
+                }
 
                 if (savedData.additional_flows && Array.isArray(savedData.additional_flows)) {
                     savedData.additional_flows.forEach(flow => {

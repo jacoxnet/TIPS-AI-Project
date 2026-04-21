@@ -33,14 +33,19 @@ def calculate_ladder(ladderp):
     base_cash_flow_date = getattr(ladderp, 'base_cash_flow_date', '')
     tax_effect_inflation = getattr(ladderp, 'tax_effect_inflation', False)
     assumed_inflation_rate = float(getattr(ladderp, 'assumed_inflation_rate', 0.0)) / 100.0
-    print(f"DEBUG: base_cash_flow_date is '{base_cash_flow_date}', tax_effect={tax_effect_inflation}, assumed_inf={assumed_inflation_rate}")
+    use_pretax = getattr(ladderp, 'use_pretax', False)
+    print(f"DEBUG: base_cash_flow_date is '{base_cash_flow_date}', tax_effect={tax_effect_inflation}, assumed_inf={assumed_inflation_rate}, use_pretax={use_pretax}")
     additional_flows = {int(f['year']): float(f['amount']) for f in ladderp.additional_flows}
     
-    # Calculate Inflation Factor using CPI data
-    print(f"DEBUG: Calling fetch_cpi_data({base_cash_flow_date})")
-    latest_cpi, as_of_cpi = fetch_cpi_data(base_cash_flow_date)
-    inflation_factor = latest_cpi / as_of_cpi if as_of_cpi else 1.0
-    print(f"DEBUG: Inflation Factor calculated as {inflation_factor} (Latest CPI: {latest_cpi}, As-Of CPI: {as_of_cpi})")
+    # Calculate Inflation Factor using CPI data (skip if using pre-tax cash flow)
+    if use_pretax:
+        inflation_factor = 1.0
+        print(f"DEBUG: Pre-tax mode enabled, skipping inflation adjustment (factor = 1.0)")
+    else:
+        print(f"DEBUG: Calling fetch_cpi_data({base_cash_flow_date})")
+        latest_cpi, as_of_cpi = fetch_cpi_data(base_cash_flow_date)
+        inflation_factor = latest_cpi / as_of_cpi if as_of_cpi else 1.0
+        print(f"DEBUG: Inflation Factor calculated as {inflation_factor} (Latest CPI: {latest_cpi}, As-Of CPI: {as_of_cpi})")
     
     owned_tips = []
     # Fetch specifics for all owned TIPS to ensure we have maturity_date, interest_rate and inflation_adjusted_value
