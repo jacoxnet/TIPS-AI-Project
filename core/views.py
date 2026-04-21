@@ -10,7 +10,7 @@ from .tinit import clear_data
 def init_view(request):
     clear_data(request)
     request.session['insession'] = True
-    return HttpResponseRedirect(reverse('home'))
+    return HttpResponseRedirect(reverse('data_entry'))
 
 def home_view(request):
     if not request.session.get('insession', False):
