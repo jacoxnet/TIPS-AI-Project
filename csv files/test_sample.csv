@@ -5,7 +5,8 @@ PARAM,assumed_inflation_rate,3,,
 PARAM,start_year,2027,,
 PARAM,end_year,2056,,
 PARAM,base_cash_flow,10000,,
-PARAM,base_cash_flow_date,2027-02,,
+PARAM,base_cash_flow_date,2025-02,,
+PARAM,use_pretax,false,,
 OWNED_TIP,cusip,912828V49,taxable,3
 OWNED_TIP,cusip,9128282L3,taxable,3
 OWNED_TIP,cusip,9128283R9,roth,3

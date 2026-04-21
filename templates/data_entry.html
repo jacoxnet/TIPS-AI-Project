@@ -41,7 +41,7 @@
                 </div>
                 <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                     <div>
-                        <label for="taxEffectInflation">Tax-Effect Increases in Principal?</label>
+                        <label for="taxEffectInflation">Tax-Effect Increases in Principal?<button type="button" class="help-icon" data-modal="helpModalTaxEffect" aria-label="Help">?</button></label>
                         <select id="taxEffectInflation" name="tax_effect_inflation">
                             <option value="no" selected>No</option>
                             <option value="yes">Yes</option>
@@ -74,7 +74,7 @@
                     <input type="number" id="baseCashFlow" name="base_cash_flow" placeholder="e.g., 50000" required>
                 </div>
                 <div class="form-group" id="asOfDateGroup">
-                    <label>As-Of Date for Base Real After-Tax Cash Flow</label>
+                    <label>As-Of Date for Base Real After-Tax Cash Flow<button type="button" class="help-icon" data-modal="helpModalAsOfDate" aria-label="Help">?</button></label>
                     <div style="display: flex; gap: 0.5rem;">
                         <select id="baseCashFlowMonth" required>
                             <option value="" disabled selected>Month</option>
@@ -96,19 +96,15 @@
                         </select>
                     </div>
                     <!-- The value will be assembled via JS -->
-                    <small class="text-secondary" style="display:block; margin-top:0.25rem;">Used to inflate Base
-                        Real After-Tax Cash Flow up to present day.</small>
                 </div>
             </div>
 
             <!-- Different Cash Flows -->
             <div>
                 <div class="flex justify-between items-center mb-4" style="margin-top:0;">
-                    <h3 style="margin-bottom:0;">2. One-Time Real After-Tax Cash Flow Differences (Optional)</h3>
+                    <h3 style="margin-bottom:0;">2. One-Time Real After-Tax Cash Flow Differences (Optional)<button type="button" class="help-icon" data-modal="helpModalCashFlowDiff" aria-label="Help">?</button></h3>
                     <button type="button" class="btn btn-secondary btn-sm" id="addCashFlowBtn">+ Add Year</button>
                 </div>
-                <p class="text-secondary" style="font-size:0.875rem; margin-bottom:1rem;">Specify different amounts for
-                    specific years (e.g., to cover gap years, one-off expenses, or other items).</p>
                 <div id="additionalCashFlowsContainer">
                     <!-- Dynamic rows go here -->
                 </div>
@@ -156,6 +152,29 @@
         </div>
     </form>
 </div>
+
+<!-- Help Modals -->
+<div id="helpModalTaxEffect" class="modal">
+    <div class="modal-content modal-content-sm">
+        <span class="close-modal">&times;</span>
+        <p>To reduce the after-tax cash flow by the estimated taxes due on the TIPS's inflation adjustments, select "yes" and enter an assumed inflation rate.</p>
+    </div>
+</div>
+
+<div id="helpModalAsOfDate" class="modal">
+    <div class="modal-content modal-content-sm">
+        <span class="close-modal">&times;</span>
+        <p>This is the date the annual cash flow desired from the TIPS ladder was determined.  If in March 2022 this was $30,000 and inflation since then has been 10%, the app will increase the cash flow to $33,000 in today's dollars.</p>
+    </div>
+</div>
+
+<div id="helpModalCashFlowDiff" class="modal">
+    <div class="modal-content modal-content-sm">
+        <span class="close-modal">&times;</span>
+        <p>If additional (or lesser) cash flow is desired from the ladder in any years (to, for example, buy a car or cover gap years or other periods when no TIPS mature), use this feature to specify how much cash flow you desire in those years.</p>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block extra_js %}

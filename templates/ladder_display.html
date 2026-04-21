@@ -28,9 +28,9 @@
                     <th class="text-right">Coupon Income</th>
                     <th class="text-right">Principal Maturing</th>
                     {% if tax_effect_inflation %}
-                    <th class="text-right">Phantom Income on Principal Adjustment</th>
+                    <th class="text-right">Phantom Income on Principal Adjustment<button type="button" class="help-icon" data-modal="helpModalPhantom" aria-label="Help">?</button></th>
                     {% endif %}
-                    <th class="text-right text-danger">Calculated Tax Drag</th>
+                    <th class="text-right text-danger">Calculated Tax Drag<button type="button" class="help-icon" data-modal="helpModalTaxDrag" aria-label="Help">?</button></th>
                     <th class="text-right" style="border-left: 2px solid var(--border-color);">Net Real After-Tax Cash
                         Flow from Portfolio</th>
                     <th class="text-right"><span class="text-danger">Shortfall</span><span> or
@@ -75,4 +75,20 @@
     <p class="text-center text-secondary">No projection data to display.</p>
     {% endif %}
 </div>
+
+<!-- Help Modals -->
+<div id="helpModalPhantom" class="modal">
+    <div class="modal-content modal-content-sm">
+        <span class="close-modal">&times;</span>
+        <p>This represents the estimated amount of taxable income created each year as a result of the TIPS's inflation adjustment.  For TIPS held in a taxable account, taxes are due annually on these adjustments even through the adjusted amount is not received until maturity.</p>
+    </div>
+</div>
+
+<div id="helpModalTaxDrag" class="modal">
+    <div class="modal-content modal-content-sm">
+        <span class="close-modal">&times;</span>
+        <p>This represents the estimated amount of taxes owed each year.  The taxes owed will not be available for other spending.</p>
+    </div>
+</div>
+
 {% endblock %}

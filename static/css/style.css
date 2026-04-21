@@ -510,3 +510,41 @@ tbody tr:hover {
     white-space: pre-wrap;
     word-wrap: break-word;
 }
+
+/* Help icon button */
+.help-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background-color: var(--accent-primary);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  margin-left: 0.3rem;
+  vertical-align: middle;
+  line-height: 1;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.help-icon:hover {
+  background-color: var(--accent-hover);
+}
+
+/* Smaller modal for help text */
+.modal-content-sm {
+  max-width: 500px;
+  width: 90%;
+  margin: 15% auto;
+  padding: 1.5rem;
+}
+
+.modal-content-sm p {
+  margin: 0.5rem 0 0;
+  line-height: 1.6;
+}
