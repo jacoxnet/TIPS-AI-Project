@@ -28,8 +28,8 @@ document.addEventListener('DOMContentLoaded', function () {
             const tip = tipsData.find(t => {
                 const tRateNum = parseFloat(t.interest_rate);
                 return !isNaN(tRateNum) && !isNaN(rateNum) &&
-                       Math.abs(tRateNum - rateNum) < 1e-6 &&
-                       t.maturity_date === maturity;
+                    Math.abs(tRateNum - rateNum) < 1e-6 &&
+                    t.maturity_date === maturity;
             });
             const cusip = tip ? tip.cusip : '—';
             const maturityCoupon = `${maturity} / ${rate}`;
@@ -125,7 +125,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const baseCashFlowYear = document.getElementById('baseCashFlowYear');
     if (baseCashFlowYear) {
         const currentYear = new Date().getFullYear();
-        for (let y = currentYear + 1; y >= 1997; y--) {
+        for (let y = currentYear; y >= 1997; y--) {
             const opt = document.createElement('option');
             opt.value = y;
             opt.textContent = y;
