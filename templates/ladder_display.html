@@ -25,16 +25,18 @@
                 <tr>
                     <th>Year</th>
                     <th class="text-right">{% if use_pretax %}Target Pre-Tax Cash Flow{% else %}Target After-Tax Cash Flow in Today's Dollars{% endif %}</th>
-                    <th class="text-right">Coupon Income</th>
-                    <th class="text-right">Principal Maturing</th>
+                    <th class="text-right">Pre-Tax Cash Flow</th>
                     {% if tax_effect_inflation %}
                     <th class="text-right">Phantom Income on Principal Adjustment<button type="button" class="help-icon" data-modal="helpModalPhantom" aria-label="Help">?</button></th>
                     {% endif %}
                     <th class="text-right text-danger">Calculated Tax Drag<button type="button" class="help-icon" data-modal="helpModalTaxDrag" aria-label="Help">?</button></th>
                     <th class="text-right" style="border-left: 2px solid var(--border-color);">Net Real After-Tax Cash
                         Flow from Portfolio</th>
-                    <th class="text-right"><span class="text-danger">Shortfall</span><span> or
-                        </span><span class="text-success">Surplus</span></th>
+                    {% if use_pretax %}
+                    <th class="text-right"><span class="text-danger">Pre-Tax Shortfall</span><span> or </span><span class="text-success">Pre-Tax Surplus</span></th>
+                    {% endif %}
+                    <th class="text-right"><span class="text-danger">After-Tax Shortfall</span><span> or
+                        </span><span class="text-success">After-Tax Surplus</span></th>
                 </tr>
             </thead>
             <tbody>
@@ -42,8 +44,7 @@
                 <tr>
                     <td><strong>{{ row.year }}</strong></td>
                     <td class="text-right">${{ row.target|floatformat:2|intcomma }}</td>
-                    <td class="text-right text-success">+${{ row.coupon_income|floatformat:2|intcomma }}</td>
-                    <td class="text-right text-success">+${{ row.principal_income|floatformat:2|intcomma }}</td>
+                    <td class="text-right text-success">+${{ row.pretax_cash_flow|floatformat:2|intcomma }}</td>
                     {% if tax_effect_inflation %}
                     <td class="text-right text-success">+${{ row.principal_adjustment|floatformat:2|intcomma }}</td>
                     {% endif %}
@@ -51,6 +52,12 @@
                     <td class="text-right" style="border-left: 2px solid var(--border-color); font-weight:500;">
                         ${{ row.net_flow|floatformat:2|intcomma }}
                     </td>
+                    {% if use_pretax %}
+                    <td class="text-right"
+                        style="font-weight:700; color: {% if row.pretax_balance > 0 %}var(--success){% elif row.pretax_balance < 0 %}var(--danger){% else %}inherit{% endif %}; white-space: nowrap;">
+                        {% if row.pretax_balance > 0 %} ${{ row.pretax_balance|floatformat:2|intcomma }} {% elif row.pretax_balance < 0 %} -${{ row.pretax_shortfall|floatformat:2|intcomma }} {% else %} $0.00 {% endif %}
+                    </td>
+                    {% endif %}
                     <td class="text-right"
                         style="font-weight:700; color: {% if row.balance > 0 %}var(--success){% elif row.balance < 0 %}var(--danger){% else %}inherit{% endif %}; white-space: nowrap;">
                         {% if row.balance > 0 %} ${{ row.balance|floatformat:2|intcomma }} {% elif row.balance < 0 %}
@@ -60,9 +67,16 @@
             </tbody>
             <tfoot>
                 <tr style="border-top: 2px solid var(--border-color);">
-                    <td colspan="{% if tax_effect_inflation %}7{% else %}6{% endif %}" class="text-right">
+                    <td colspan="{% if tax_effect_inflation %}6{% else %}5{% endif %}" class="text-right">
                         <strong>TOTAL</strong>
                     </td>
+                    {% if use_pretax %}
+                    <td class="text-right"
+                        style="font-weight:700; color: {% if total_pretax_balance > 0 %}var(--success){% elif total_pretax_balance < 0 %}var(--danger){% else %}inherit{% endif %}; white-space: nowrap;">
+                        {% if total_pretax_balance > 0 %} ${{ total_pretax_balance|floatformat:2|intcomma }} {% elif total_pretax_balance < 0 %}
+                            -${{ total_pretax_shortfall|floatformat:2|intcomma }} {% else %} $0.00 {% endif %}
+                    </td>
+                    {% endif %}
                     <td class="text-right"
                         style="font-weight:700; color: {% if total_balance > 0 %}var(--success){% elif total_balance < 0 %}var(--danger){% else %}inherit{% endif %}; white-space: nowrap;">
                         {% if total_balance > 0 %} ${{ total_balance|floatformat:2|intcomma }} {% elif total_balance < 0 %}

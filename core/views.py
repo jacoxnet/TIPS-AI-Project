@@ -82,6 +82,9 @@ def ladder_display_view(request):
         total_balance = sum(row['balance'] for row in context['ladder_years'])
         context['total_balance'] = total_balance
         context['total_shortfall'] = -total_balance if total_balance < 0 else 0
+        total_pretax_balance = sum(row['pretax_balance'] for row in context['ladder_years'])
+        context['total_pretax_balance'] = total_pretax_balance
+        context['total_pretax_shortfall'] = -total_pretax_balance if total_pretax_balance < 0 else 0
 
     return render(request, 'ladder_display.html', context)
 

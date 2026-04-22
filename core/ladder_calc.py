@@ -118,7 +118,10 @@ def calculate_ladder(ladderp):
                 if tip['account_type'] == 'pretax':
                     row['tax_drag'] += inflated_principal * tax_rate
                     
-        row['net_flow'] = row['coupon_income'] + row['principal_income'] - row['tax_drag']
+        row['pretax_cash_flow'] = row['coupon_income'] + row['principal_income']
+        row['pretax_balance'] = row['pretax_cash_flow'] - row['target']
+        row['pretax_shortfall'] = row['target'] - row['pretax_cash_flow'] if row['pretax_balance'] < 0 else 0
+        row['net_flow'] = row['pretax_cash_flow'] - row['tax_drag']
         row['shortfall'] = row['target'] - row['net_flow']
         row['balance'] = row['net_flow'] - row['target']
         ladder_years.append(row)
