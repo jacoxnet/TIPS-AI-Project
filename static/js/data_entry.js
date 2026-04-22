@@ -99,23 +99,32 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // --- Use Pre-Tax Cash Flow checkbox ---
     const usePretaxCheckbox = document.getElementById('usePretax');
-    const asOfDateGroup = document.getElementById('asOfDateGroup');
-    const baseCashFlowMonthEl = document.getElementById('baseCashFlowMonth');
-    const baseCashFlowYearEl = document.getElementById('baseCashFlowYear');
 
     function updatePretaxState() {
-        if (usePretaxCheckbox && asOfDateGroup) {
-            const isChecked = usePretaxCheckbox.checked;
-            asOfDateGroup.style.opacity = isChecked ? '0.4' : '1';
-            asOfDateGroup.style.pointerEvents = isChecked ? 'none' : 'auto';
-            if (baseCashFlowMonthEl) baseCashFlowMonthEl.required = !isChecked;
-            if (baseCashFlowYearEl) baseCashFlowYearEl.required = !isChecked;
-        }
+        // no-op: pretax checkbox no longer affects the inflation section
     }
 
     if (usePretaxCheckbox) {
         usePretaxCheckbox.addEventListener('change', updatePretaxState);
-        updatePretaxState();
+    }
+
+    // --- Inflate Base Cash Flow Yes/No ---
+    const inflateBaseCfEl = document.getElementById('inflateBaseCf');
+    const asOfDateSubGroup = document.getElementById('asOfDateSubGroup');
+    const baseCashFlowMonthEl = document.getElementById('baseCashFlowMonth');
+    const baseCashFlowYearEl = document.getElementById('baseCashFlowYear');
+
+    function updateInflateState() {
+        if (!inflateBaseCfEl || !asOfDateSubGroup) return;
+        const isYes = inflateBaseCfEl.value === 'yes';
+        asOfDateSubGroup.style.display = isYes ? 'block' : 'none';
+        if (baseCashFlowMonthEl) baseCashFlowMonthEl.required = isYes;
+        if (baseCashFlowYearEl) baseCashFlowYearEl.required = isYes;
+    }
+
+    if (inflateBaseCfEl) {
+        inflateBaseCfEl.addEventListener('change', updateInflateState);
+        updateInflateState();
     }
 
     const startYearInput = document.getElementById('startYear');
@@ -394,6 +403,7 @@ document.addEventListener('DOMContentLoaded', function () {
             start_year: parseInt(document.getElementById('startYear').value, 10),
             end_year: parseInt(document.getElementById('endYear').value, 10),
             base_cash_flow: parseFloat(document.getElementById('baseCashFlow').value),
+            inflate_base_cf: inflateBaseCfEl ? inflateBaseCfEl.value === 'yes' : false,
             base_cash_flow_date: getBaseCashFlowDate(),
             tax_effect_inflation: document.getElementById('taxEffectInflation') && document.getElementById('taxEffectInflation').value === 'yes',
             assumed_inflation_rate: (document.getElementById('taxEffectInflation') && document.getElementById('taxEffectInflation').value === 'yes') ? parseFloat(document.getElementById('assumedInflationRate').value || 0) : 0.0,
@@ -436,6 +446,7 @@ document.addEventListener('DOMContentLoaded', function () {
         csvContent += `PARAM,start_year,${document.getElementById('startYear').value},,\n`;
         csvContent += `PARAM,end_year,${document.getElementById('endYear').value},,\n`;
         csvContent += `PARAM,base_cash_flow,${document.getElementById('baseCashFlow').value},,\n`;
+        csvContent += `PARAM,inflate_base_cf,${inflateBaseCfEl ? inflateBaseCfEl.value === 'yes' : false},,\n`;
         csvContent += `PARAM,base_cash_flow_date,${getBaseCashFlowDate()},,\n`;
         csvContent += `PARAM,use_pretax,${usePretaxCheckbox ? usePretaxCheckbox.checked : false},,\n`;
 
@@ -568,6 +579,10 @@ document.addEventListener('DOMContentLoaded', function () {
                             document.getElementById('endYear').value = val;
                         }
                         if (key === 'base_cash_flow') document.getElementById('baseCashFlow').value = val;
+                        if (key === 'inflate_base_cf' && inflateBaseCfEl) {
+                            inflateBaseCfEl.value = val === 'true' ? 'yes' : 'no';
+                            updateInflateState();
+                        }
                         if (key === 'base_cash_flow_date') setBaseCashFlowDate(val);
                         if (key === 'use_pretax' && usePretaxCheckbox) {
                             usePretaxCheckbox.checked = val === 'true';
@@ -735,6 +750,10 @@ document.addEventListener('DOMContentLoaded', function () {
                                 }
                                 if (key === 'end_year') document.getElementById('endYear').value = val;
                                 if (key === 'base_cash_flow') document.getElementById('baseCashFlow').value = val;
+                                if (key === 'inflate_base_cf' && inflateBaseCfEl) {
+                                    inflateBaseCfEl.value = val === 'true' ? 'yes' : 'no';
+                                    updateInflateState();
+                                }
                                 if (key === 'base_cash_flow_date') setBaseCashFlowDate(val);
                                 if (key === 'use_pretax' && usePretaxCheckbox) {
                                     usePretaxCheckbox.checked = val === 'true';
@@ -802,6 +821,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
                 if (savedData.end_year !== undefined) document.getElementById('endYear').value = savedData.end_year;
                 if (savedData.base_cash_flow !== undefined) document.getElementById('baseCashFlow').value = savedData.base_cash_flow;
+                if (savedData.inflate_base_cf !== undefined && inflateBaseCfEl) {
+                    inflateBaseCfEl.value = savedData.inflate_base_cf ? 'yes' : 'no';
+                    updateInflateState();
+                }
                 if (savedData.base_cash_flow_date !== undefined) setBaseCashFlowDate(savedData.base_cash_flow_date);
                 if (savedData.use_pretax !== undefined && usePretaxCheckbox) {
                     usePretaxCheckbox.checked = savedData.use_pretax;

@@ -74,28 +74,34 @@
                     <input type="number" id="baseCashFlow" name="base_cash_flow" placeholder="e.g., 50000" required>
                 </div>
                 <div class="form-group" id="asOfDateGroup">
-                    <label>As-Of Date for Base Real After-Tax Cash Flow<button type="button" class="help-icon" data-modal="helpModalAsOfDate" aria-label="Help">?</button></label>
-                    <div style="display: flex; gap: 0.5rem;">
-                        <select id="baseCashFlowMonth" required>
-                            <option value="" disabled selected>Month</option>
-                            <option value="01">01 - January</option>
-                            <option value="02">02 - February</option>
-                            <option value="03">03 - March</option>
-                            <option value="04">04 - April</option>
-                            <option value="05">05 - May</option>
-                            <option value="06">06 - June</option>
-                            <option value="07">07 - July</option>
-                            <option value="08">08 - August</option>
-                            <option value="09">09 - September</option>
-                            <option value="10">10 - October</option>
-                            <option value="11">11 - November</option>
-                            <option value="12">12 - December</option>
-                        </select>
-                        <select id="baseCashFlowYear" required>
-                            <option value="" disabled selected>Year</option>
-                        </select>
+                    <label>Inflate Base Real Cash Flow from a historical date to the present?<button type="button" class="help-icon" data-modal="helpModalAsOfDate" aria-label="Help">?</button></label>
+                    <select id="inflateBaseCf">
+                        <option value="no" selected>No</option>
+                        <option value="yes">Yes</option>
+                    </select>
+                    <div id="asOfDateSubGroup" style="display: none; margin-top: 0.5rem;">
+                        <div style="display: flex; gap: 0.5rem;">
+                            <select id="baseCashFlowMonth">
+                                <option value="" disabled selected>Month</option>
+                                <option value="01">01 - January</option>
+                                <option value="02">02 - February</option>
+                                <option value="03">03 - March</option>
+                                <option value="04">04 - April</option>
+                                <option value="05">05 - May</option>
+                                <option value="06">06 - June</option>
+                                <option value="07">07 - July</option>
+                                <option value="08">08 - August</option>
+                                <option value="09">09 - September</option>
+                                <option value="10">10 - October</option>
+                                <option value="11">11 - November</option>
+                                <option value="12">12 - December</option>
+                            </select>
+                            <select id="baseCashFlowYear">
+                                <option value="" disabled selected>Year</option>
+                            </select>
+                        </div>
+                        <!-- The value will be assembled via JS -->
                     </div>
-                    <!-- The value will be assembled via JS -->
                 </div>
             </div>
 
@@ -164,7 +170,7 @@
 <div id="helpModalAsOfDate" class="modal">
     <div class="modal-content modal-content-sm">
         <span class="close-modal">&times;</span>
-        <p>This is the date the annual cash flow desired from the TIPS ladder was determined.  If in March 2022 this was $30,000 and inflation since then has been 10%, the app will increase the cash flow to $33,000 in today's dollars.</p>
+        <p>Select "Yes" if the base cash flow amount was determined at a past date and you want it adjusted to today's dollars.  For example, if in March 2022 this was $30,000 and inflation since then has been 10%, the app will increase the cash flow to $33,000.  Select "No" to use the amount as entered without any inflation adjustment.</p>
     </div>
 </div>
 
@@ -180,5 +186,5 @@
 {% block extra_js %}
 {{ tips_data|json_script:"tips-data" }}
 {{ ladder_data|json_script:"saved-ladder-data" }}
-<script src="{% static 'js/data_entry.js' %}?v=5"></script>
+<script src="{% static 'js/data_entry.js' %}?v=6"></script>
 {% endblock %}

@@ -34,13 +34,14 @@ def calculate_ladder(ladderp):
     tax_effect_inflation = getattr(ladderp, 'tax_effect_inflation', False)
     assumed_inflation_rate = float(getattr(ladderp, 'assumed_inflation_rate', 0.0)) / 100.0
     use_pretax = getattr(ladderp, 'use_pretax', False)
-    print(f"DEBUG: base_cash_flow_date is '{base_cash_flow_date}', tax_effect={tax_effect_inflation}, assumed_inf={assumed_inflation_rate}, use_pretax={use_pretax}")
+    inflate_base_cf = getattr(ladderp, 'inflate_base_cf', False)
+    print(f"DEBUG: base_cash_flow_date is '{base_cash_flow_date}', tax_effect={tax_effect_inflation}, assumed_inf={assumed_inflation_rate}, use_pretax={use_pretax}, inflate_base_cf={inflate_base_cf}")
     additional_flows = {int(f['year']): float(f['amount']) for f in ladderp.additional_flows}
-    
-    # Calculate Inflation Factor using CPI data (skip if using pre-tax cash flow)
-    if use_pretax:
+
+    # Calculate Inflation Factor using CPI data (only if user opted in)
+    if not inflate_base_cf:
         inflation_factor = 1.0
-        print(f"DEBUG: Pre-tax mode enabled, skipping inflation adjustment (factor = 1.0)")
+        print(f"DEBUG: Inflation not requested, using factor = 1.0")
     else:
         print(f"DEBUG: Calling fetch_cpi_data({base_cash_flow_date})")
         latest_cpi, as_of_cpi = fetch_cpi_data(base_cash_flow_date)

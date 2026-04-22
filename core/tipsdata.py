@@ -40,6 +40,7 @@ class Ladder_values:
         self.tax_effect_inflation = False
         self.assumed_inflation_rate = 0.0
         self.use_pretax = False
+        self.inflate_base_cf = False
         # additional flows is a list of dicts with "year" and "amount" keys
         self.additional_flows = []
         # owned_tips is a list of dicts with "id_type" "id_value" "account_type" "quantity"
@@ -56,6 +57,7 @@ class Ladder_values:
             'tax_effect_inflation': self.tax_effect_inflation,
             'assumed_inflation_rate': self.assumed_inflation_rate,
             'use_pretax': self.use_pretax,
+            'inflate_base_cf': self.inflate_base_cf,
             'additional_flows': self.additional_flows,
             'owned_tips': self.owned_tips
         }
@@ -73,6 +75,7 @@ class Ladder_values:
         self.tax_effect_inflation = pdata.get('tax_effect_inflation', False)
         self.assumed_inflation_rate = pdata.get('assumed_inflation_rate', 0.0)
         self.use_pretax = pdata.get('use_pretax', False)
+        self.inflate_base_cf = pdata.get('inflate_base_cf', False)
         self.additional_flows = pdata.get('additional_flows', [])
         self.owned_tips = pdata.get('owned_tips', [])
         return self
