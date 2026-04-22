@@ -333,43 +333,25 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Confirm (green check)
         tr.querySelector('.icon-btn-confirm').addEventListener('click', () => {
-            // Validate
             const fields = [idTypeSelect, idValueSelect, accountTypeSelect, qtyInput];
             const isValid = fields.every(f => f.checkValidity() && f.value !== '');
             if (!isValid) {
                 fields.forEach(f => f.reportValidity && f.reportValidity());
                 return;
             }
-
-            const newDisplayRow = createDisplayRow(
+            tr.replaceWith(createDisplayRow(
                 idTypeSelect.value,
                 idValueSelect.value,
                 accountTypeSelect.value,
                 qtyInput.value
-            );
-
-            if (editingRow) {
-                // We're editing — restore the original row position
-                tr.replaceWith(newDisplayRow);
-            } else {
-                // New addition — replace the entry row with the display row
-                if (insertAfter) {
-                    // Inserted below a specific row
-                    tr.replaceWith(newDisplayRow);
-                } else {
-                    // Appended from the bottom add button
-                    tr.replaceWith(newDisplayRow);
-                }
-            }
+            ));
             updateEmptyRowVisibility();
         });
 
         // Cancel (red X)
         tr.querySelector('.icon-btn-cancel').addEventListener('click', () => {
             if (editingRow) {
-                // Restore the original display row
                 tr.replaceWith(editingRow);
-                // Re-attach event listeners (already attached on original)
             } else {
                 tr.remove();
             }
@@ -436,7 +418,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // --- File Session Tracking ---
     let currentFileHandle = null;
 
-    // --- CSV Save functionality ---
+    // --- CSV Save ---
     saveCsvBtn.addEventListener('click', async () => {
         let csvContent = "Type,Field1,Field2,Field3,Field4\n";
 
@@ -499,182 +481,188 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // --- CSV Load functionality ---
-    loadCsvBtn.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
+    // -----------------------------------------------------------------------
+    // --- CSV Parse / Apply helpers -----------------------------------------
+    // -----------------------------------------------------------------------
 
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            const text = event.target.result;
-            const lines = text.split('\n');
-
-            // Clear current dynamic rows
-            additionalCashFlowsContainer.innerHTML = '';
-            document.querySelectorAll('.owned-tip-row, .tip-entry-row').forEach(r => r.remove());
-            if (emptyTipsRow) emptyTipsRow.style.display = 'table-row';
-
-            let isOldFormat = false;
-            let startIndex = 0;
-            if (lines.length > 0) {
-                const checkLine = lines[0].toUpperCase();
-                if (checkLine.startsWith('TYPE,')) {
-                    isOldFormat = true;
-                    startIndex = 1;
-                } else if (checkLine.startsWith('PARAM,') || checkLine.startsWith('OWNED_TIP,') || checkLine.startsWith('ADD_FLOW,')) {
-                    isOldFormat = true;
-                    startIndex = 0;
-                }
-            }
-
-            let foundStartYear = false;
-            let foundEndYear = false;
-            const loadedDatedYears = [];
-            const loadedMaturityYears = [];
-
-            for (let i = startIndex; i < lines.length; i++) {
-                const line = lines[i].trim();
-                if (!line) continue;
-
-                let inQuotes = false;
-                let currentVal = '';
-                let vals = [];
-                for (let j = 0; j < line.length; j++) {
-                    const char = line[j];
-                    if (char === '"') {
-                        inQuotes = !inQuotes;
-                    } else if (char === ',' && !inQuotes) {
-                        vals.push(currentVal);
-                        currentVal = '';
-                    } else {
-                        currentVal += char;
-                    }
-                }
+    // Split one CSV line into fields, respecting double-quoted values.
+    function parseCsvLine(line) {
+        let inQuotes = false;
+        let currentVal = '';
+        const vals = [];
+        for (let j = 0; j < line.length; j++) {
+            const char = line[j];
+            if (char === '"') {
+                inQuotes = !inQuotes;
+            } else if (char === ',' && !inQuotes) {
                 vals.push(currentVal);
+                currentVal = '';
+            } else {
+                currentVal += char;
+            }
+        }
+        vals.push(currentVal);
+        return vals;
+    }
 
-                if (isOldFormat) {
-                    const type = vals[0];
-                    if (type === 'PARAM') {
-                        const key = vals[1];
-                        const val = vals[2];
-                        if (key === 'tax_rate') document.getElementById('taxRate').value = val;
-                        if (key === 'tax_effect_inflation' && document.getElementById('taxEffectInflation')) {
-                            document.getElementById('taxEffectInflation').value = val === 'true' ? 'yes' : 'no';
-                            document.getElementById('taxEffectInflation').dispatchEvent(new Event('change'));
-                        }
-                        if (key === 'assumed_inflation_rate' && document.getElementById('assumedInflationRate')) {
-                            document.getElementById('assumedInflationRate').value = val;
-                        }
-                        if (key === 'start_year') {
-                            foundStartYear = true;
-                            let loadedYear = parseInt(val, 10);
-                            const currentYear = new Date().getFullYear();
-                            if (loadedYear < currentYear) {
-                                loadedYear = currentYear;
-                            }
-                            document.getElementById('startYear').value = loadedYear;
-                        }
-                        if (key === 'end_year') {
-                            foundEndYear = true;
-                            document.getElementById('endYear').value = val;
-                        }
-                        if (key === 'base_cash_flow') document.getElementById('baseCashFlow').value = val;
-                        if (key === 'inflate_base_cf' && inflateBaseCfEl) {
-                            inflateBaseCfEl.value = val === 'true' ? 'yes' : 'no';
-                            updateInflateState();
-                        }
-                        if (key === 'base_cash_flow_date') setBaseCashFlowDate(val);
-                        if (key === 'use_pretax' && usePretaxCheckbox) {
-                            usePretaxCheckbox.checked = val === 'true';
-                            updatePretaxState();
-                        }
-                    } else if (type === 'ADD_FLOW') {
-                        addCashFlowBtn.click();
-                        const created = additionalCashFlowsContainer.lastElementChild;
-                        created.querySelector('.flow-year').value = vals[1];
-                        created.querySelector('.flow-amount').value = vals[2];
-                    } else if (type === 'OWNED_TIP') {
-                        // vals: OWNED_TIP, id_type, id_value, account_type, quantity
-                        let idType = vals[1];
-                        let idValue = vals[2];
-                        // Ensure idValue is in options; resolve CUSIP if needed
-                        if (idType === 'cusip') {
-                            const tip = tipsData.find(t => t.cusip === idValue);
-                            if (!tip) {
-                                // Keep as-is — will show with (Loaded) label
-                            }
-                        }
+    // Parse CSV text into a structured object without touching the DOM.
+    // Handles both the full PARAM/ADD_FLOW/OWNED_TIP format and the legacy
+    // simple CUSIP,Quantity format.
+    // Returns { params, additionalFlows, ownedTips } where each ownedTips
+    // entry includes resolved maturityYear and datedYear for optional
+    // start/end year auto-fill.
+    function parseCsvText(text) {
+        const lines = text.split('\n');
+        const result = { params: {}, additionalFlows: [], ownedTips: [] };
 
-                        let skip = false;
-                        const currentYear = new Date().getFullYear();
-                        const resolved = resolveDisplayValues(idType, idValue);
-                        let maturityYear = NaN;
-                        if (resolved.maturityCoupon && resolved.maturityCoupon !== '—') {
-                            const maturityDate = resolved.maturityCoupon.split(' / ')[0];
-                            maturityYear = parseInt(maturityDate.substring(0, 4), 10);
-                            if (!isNaN(maturityYear) && maturityYear < currentYear) {
-                                skip = true;
-                            }
-                        }
+        let isOldFormat = false;
+        let startIndex = 0;
+        if (lines.length > 0) {
+            const checkLine = lines[0].toUpperCase();
+            if (checkLine.startsWith('TYPE,')) {
+                isOldFormat = true;
+                startIndex = 1;
+            } else if (checkLine.startsWith('PARAM,') || checkLine.startsWith('OWNED_TIP,') || checkLine.startsWith('ADD_FLOW,')) {
+                isOldFormat = true;
+                startIndex = 0;
+            }
+        }
 
-                        if (!skip) {
-                            const displayRow = createDisplayRow(idType, idValue, vals[3], vals[4]);
-                            ownedTipsTbody.insertBefore(displayRow, addTipsActionRow);
-                            updateEmptyRowVisibility();
-                            if (!isNaN(maturityYear)) loadedMaturityYears.push(maturityYear);
-                            if (resolved.datedDate) {
-                                const dYear = parseInt(resolved.datedDate.substring(0, 4), 10);
-                                if (!isNaN(dYear)) loadedDatedYears.push(dYear);
-                            }
-                        }
+        const currentYear = new Date().getFullYear();
+
+        for (let i = startIndex; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (!line) continue;
+            const vals = parseCsvLine(line);
+
+            if (isOldFormat) {
+                const type = vals[0];
+                if (type === 'PARAM') {
+                    result.params[vals[1]] = vals[2];
+                } else if (type === 'ADD_FLOW') {
+                    result.additionalFlows.push({ year: vals[1], amount: vals[2] });
+                } else if (type === 'OWNED_TIP') {
+                    const idType = vals[1];
+                    const idValue = vals[2];
+                    const resolved = resolveDisplayValues(idType, idValue);
+                    let maturityYear = NaN;
+                    let skip = false;
+                    if (resolved.maturityCoupon && resolved.maturityCoupon !== '—') {
+                        const maturityDate = resolved.maturityCoupon.split(' / ')[0];
+                        maturityYear = parseInt(maturityDate.substring(0, 4), 10);
+                        if (!isNaN(maturityYear) && maturityYear < currentYear) skip = true;
                     }
-                } else {
-                    // Simple format: CUSIP, Quantity
-                    if (vals.length >= 2) {
-                        const cusip = vals[0].trim();
-                        const quantity = vals[1].trim();
-
-                        let skip = false;
-                        const currentYear = new Date().getFullYear();
-                        const resolved = resolveDisplayValues('cusip', cusip);
-                        let maturityYear = NaN;
-                        if (resolved.maturityCoupon && resolved.maturityCoupon !== '—') {
-                            const maturityDate = resolved.maturityCoupon.split(' / ')[0];
-                            maturityYear = parseInt(maturityDate.substring(0, 4), 10);
-                            if (!isNaN(maturityYear) && maturityYear < currentYear) {
-                                skip = true;
-                            }
-                        }
-
-                        if (!skip) {
-                            const displayRow = createDisplayRow('cusip', cusip, 'pretax', quantity);
-                            ownedTipsTbody.insertBefore(displayRow, addTipsActionRow);
-                            updateEmptyRowVisibility();
-                            if (!isNaN(maturityYear)) loadedMaturityYears.push(maturityYear);
-                            if (resolved.datedDate) {
-                                const dYear = parseInt(resolved.datedDate.substring(0, 4), 10);
-                                if (!isNaN(dYear)) loadedDatedYears.push(dYear);
-                            }
-                        }
+                    if (!skip) {
+                        const datedYear = resolved.datedDate ? parseInt(resolved.datedDate.substring(0, 4), 10) : NaN;
+                        result.ownedTips.push({ idType, idValue, accountType: vals[3], qty: vals[4], maturityYear, datedYear });
+                    }
+                }
+            } else {
+                // Simple format: CUSIP, Quantity (with optional header row)
+                if (vals.length >= 2 && !isNaN(parseInt(vals[1].trim(), 10))) {
+                    const cusip = vals[0].trim();
+                    const quantity = vals[1].trim();
+                    const resolved = resolveDisplayValues('cusip', cusip);
+                    let maturityYear = NaN;
+                    let skip = false;
+                    if (resolved.maturityCoupon && resolved.maturityCoupon !== '—') {
+                        const maturityDate = resolved.maturityCoupon.split(' / ')[0];
+                        maturityYear = parseInt(maturityDate.substring(0, 4), 10);
+                        if (!isNaN(maturityYear) && maturityYear < currentYear) skip = true;
+                    }
+                    if (!skip) {
+                        const datedYear = resolved.datedDate ? parseInt(resolved.datedDate.substring(0, 4), 10) : NaN;
+                        result.ownedTips.push({ idType: 'cusip', idValue: cusip, accountType: 'pretax', qty: quantity, maturityYear, datedYear });
                     }
                 }
             }
+        }
 
-            // Pre-populate start/end year from loaded TIPS when not set by PARAM rows
+        return result;
+    }
+
+    // Apply a parsed CSV object to the form.
+    // Pass { autoFillYears: true } to infer start/end year from TIPS
+    // maturity/dated dates when those params were absent in the file.
+    function applyCsvData(parsed, { autoFillYears = false } = {}) {
+        additionalCashFlowsContainer.innerHTML = '';
+        document.querySelectorAll('.owned-tip-row, .tip-entry-row').forEach(r => r.remove());
+        if (emptyTipsRow) emptyTipsRow.style.display = 'table-row';
+
+        const { params, additionalFlows, ownedTips } = parsed;
+        let foundStartYear = false;
+        let foundEndYear = false;
+
+        if (params.tax_rate !== undefined) document.getElementById('taxRate').value = params.tax_rate;
+        if (params.tax_effect_inflation !== undefined && document.getElementById('taxEffectInflation')) {
+            document.getElementById('taxEffectInflation').value = params.tax_effect_inflation === 'true' ? 'yes' : 'no';
+            document.getElementById('taxEffectInflation').dispatchEvent(new Event('change'));
+        }
+        if (params.assumed_inflation_rate !== undefined && document.getElementById('assumedInflationRate')) {
+            document.getElementById('assumedInflationRate').value = params.assumed_inflation_rate;
+        }
+        if (params.start_year !== undefined) {
+            foundStartYear = true;
+            let loadedYear = parseInt(params.start_year, 10);
+            const currentYear = new Date().getFullYear();
+            if (loadedYear < currentYear) loadedYear = currentYear;
+            document.getElementById('startYear').value = loadedYear;
+        }
+        if (params.end_year !== undefined) {
+            foundEndYear = true;
+            document.getElementById('endYear').value = params.end_year;
+        }
+        if (params.base_cash_flow !== undefined) document.getElementById('baseCashFlow').value = params.base_cash_flow;
+        if (params.inflate_base_cf !== undefined && inflateBaseCfEl) {
+            inflateBaseCfEl.value = params.inflate_base_cf === 'true' ? 'yes' : 'no';
+            updateInflateState();
+        }
+        if (params.base_cash_flow_date !== undefined) setBaseCashFlowDate(params.base_cash_flow_date);
+        if (params.use_pretax !== undefined && usePretaxCheckbox) {
+            usePretaxCheckbox.checked = params.use_pretax === 'true';
+            updatePretaxState();
+        }
+
+        additionalFlows.forEach(({ year, amount }) => {
+            addCashFlowBtn.click();
+            const created = additionalCashFlowsContainer.lastElementChild;
+            created.querySelector('.flow-year').value = year;
+            created.querySelector('.flow-amount').value = amount;
+        });
+
+        const loadedMaturityYears = [];
+        const loadedDatedYears = [];
+        ownedTips.forEach(({ idType, idValue, accountType, qty, maturityYear, datedYear }) => {
+            ownedTipsTbody.insertBefore(createDisplayRow(idType, idValue, accountType, qty), addTipsActionRow);
+            updateEmptyRowVisibility();
+            if (!isNaN(maturityYear)) loadedMaturityYears.push(maturityYear);
+            if (!isNaN(datedYear)) loadedDatedYears.push(datedYear);
+        });
+
+        if (autoFillYears) {
+            const currentYear = new Date().getFullYear();
             if (!foundStartYear && loadedDatedYears.length > 0) {
-                const currentYear = new Date().getFullYear();
                 document.getElementById('startYear').value = Math.max(Math.min(...loadedDatedYears), currentYear);
             }
             if (!foundEndYear && loadedMaturityYears.length > 0) {
                 document.getElementById('endYear').value = Math.max(...loadedMaturityYears);
             }
+        }
+    }
+
+    // --- CSV Load ---
+    loadCsvBtn.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            applyCsvData(parseCsvText(event.target.result), { autoFillYears: true });
         };
         reader.readAsText(file);
-
         loadCsvBtn.value = '';
     });
 
-    // --- Sample CSV Load functionality ---
+    // --- Sample CSV Load ---
     const sampleCsvBtn = document.getElementById('sampleCsvBtn');
     if (sampleCsvBtn) {
         sampleCsvBtn.addEventListener('click', () => {
@@ -685,108 +673,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         alert('Error loading sample: ' + data.error);
                         return;
                     }
-                    // Simulate a file load by feeding CSV content through the same parsing logic
-                    const text = data.csv_content;
-                    const lines = text.split('\n');
-
-                    // Clear current dynamic rows
-                    additionalCashFlowsContainer.innerHTML = '';
-                    document.querySelectorAll('.owned-tip-row, .tip-entry-row').forEach(r => r.remove());
-                    if (emptyTipsRow) emptyTipsRow.style.display = 'table-row';
-
-                    let isOldFormat = false;
-                    let startIndex = 0;
-                    if (lines.length > 0) {
-                        const checkLine = lines[0].toUpperCase();
-                        if (checkLine.startsWith('TYPE,')) {
-                            isOldFormat = true;
-                            startIndex = 1;
-                        } else if (checkLine.startsWith('PARAM,') || checkLine.startsWith('OWNED_TIP,') || checkLine.startsWith('ADD_FLOW,')) {
-                            isOldFormat = true;
-                            startIndex = 0;
-                        }
-                    }
-
-                    for (let i = startIndex; i < lines.length; i++) {
-                        const line = lines[i].trim();
-                        if (!line) continue;
-
-                        let inQuotes = false;
-                        let currentVal = '';
-                        let vals = [];
-                        for (let j = 0; j < line.length; j++) {
-                            const char = line[j];
-                            if (char === '"') {
-                                inQuotes = !inQuotes;
-                            } else if (char === ',' && !inQuotes) {
-                                vals.push(currentVal);
-                                currentVal = '';
-                            } else {
-                                currentVal += char;
-                            }
-                        }
-                        vals.push(currentVal);
-
-                        if (isOldFormat) {
-                            const type = vals[0];
-                            if (type === 'PARAM') {
-                                const key = vals[1];
-                                const val = vals[2];
-                                if (key === 'tax_rate') document.getElementById('taxRate').value = val;
-                                if (key === 'tax_effect_inflation' && document.getElementById('taxEffectInflation')) {
-                                    document.getElementById('taxEffectInflation').value = val === 'true' ? 'yes' : 'no';
-                                    document.getElementById('taxEffectInflation').dispatchEvent(new Event('change'));
-                                }
-                                if (key === 'assumed_inflation_rate' && document.getElementById('assumedInflationRate')) {
-                                    document.getElementById('assumedInflationRate').value = val;
-                                }
-                                if (key === 'start_year') {
-                                    let loadedYear = parseInt(val, 10);
-                                    const currentYear = new Date().getFullYear();
-                                    if (loadedYear < currentYear) {
-                                        loadedYear = currentYear;
-                                    }
-                                    document.getElementById('startYear').value = loadedYear;
-                                }
-                                if (key === 'end_year') document.getElementById('endYear').value = val;
-                                if (key === 'base_cash_flow') document.getElementById('baseCashFlow').value = val;
-                                if (key === 'inflate_base_cf' && inflateBaseCfEl) {
-                                    inflateBaseCfEl.value = val === 'true' ? 'yes' : 'no';
-                                    updateInflateState();
-                                }
-                                if (key === 'base_cash_flow_date') setBaseCashFlowDate(val);
-                                if (key === 'use_pretax' && usePretaxCheckbox) {
-                                    usePretaxCheckbox.checked = val === 'true';
-                                    updatePretaxState();
-                                }
-                            } else if (type === 'ADD_FLOW') {
-                                addCashFlowBtn.click();
-                                const created = additionalCashFlowsContainer.lastElementChild;
-                                created.querySelector('.flow-year').value = vals[1];
-                                created.querySelector('.flow-amount').value = vals[2];
-                            } else if (type === 'OWNED_TIP') {
-                                let idType = vals[1];
-                                let idValue = vals[2];
-
-                                let skip = false;
-                                const currentYear = new Date().getFullYear();
-                                const resolved = resolveDisplayValues(idType, idValue);
-                                if (resolved.maturityCoupon && resolved.maturityCoupon !== '—') {
-                                    const maturityDate = resolved.maturityCoupon.split(' / ')[0];
-                                    const maturityYear = parseInt(maturityDate.substring(0, 4), 10);
-                                    if (!isNaN(maturityYear) && maturityYear < currentYear) {
-                                        skip = true;
-                                    }
-                                }
-
-                                if (!skip) {
-                                    const displayRow = createDisplayRow(idType, idValue, vals[3], vals[4]);
-                                    ownedTipsTbody.insertBefore(displayRow, addTipsActionRow);
-                                    updateEmptyRowVisibility();
-                                }
-                            }
-                        }
-                    }
+                    applyCsvData(parseCsvText(data.csv_content));
                 })
                 .catch(err => {
                     console.error('Error loading sample CSV:', err);
