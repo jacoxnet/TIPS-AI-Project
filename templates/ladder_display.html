@@ -27,16 +27,16 @@
                     <th class="text-right">{% if use_pretax %}Target Pre-Tax Cash Flow{% else %}Target After-Tax Cash Flow in Today's Dollars{% endif %}</th>
                     <th class="text-right">Pre-Tax Cash Flow</th>
                     {% if tax_effect_inflation %}
-                    <th class="text-right">Phantom Income on Principal Adjustment<button type="button" class="help-icon" data-modal="helpModalPhantom" aria-label="Help">?</button></th>
+                    <th class="text-right">Phantom Income on Principal Increase<button type="button" class="help-icon" data-modal="helpModalPhantom" aria-label="Help">?</button></th>
                     {% endif %}
                     <th class="text-right text-danger">Calculated Tax Drag<button type="button" class="help-icon" data-modal="helpModalTaxDrag" aria-label="Help">?</button></th>
                     <th class="text-right" style="border-left: 2px solid var(--border-color);">Net Real After-Tax Cash
                         Flow from Portfolio</th>
                     {% if use_pretax %}
-                    <th class="text-right"><span class="text-danger">Pre-Tax Shortfall</span><span> or </span><span class="text-success">Pre-Tax Surplus</span></th>
+                    <th class="text-right"><span>Pre-Tax </span><span class="text-danger">Shortfall</span><span> or </span><span class="text-success">Surplus</span></th>
                     {% endif %}
-                    <th class="text-right"><span class="text-danger">After-Tax Shortfall</span><span> or
-                        </span><span class="text-success">After-Tax Surplus</span></th>
+                    <th class="text-right"><span>After-Tax </span><span class="text-danger">Shortfall</span><span> or
+                        </span><span class="text-success">Surplus</span></th>
                 </tr>
             </thead>
             <tbody>
