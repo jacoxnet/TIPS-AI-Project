@@ -1,4 +1,13 @@
 :root {
+  /* Kevin M css */
+
+  --portal-text-muted: #475569;
+  --chip-bg: #e2e8f0;
+  --border-light: #cbd5e1;
+  --portal-text-on-dark: #ffffff;
+  --portal-text-main: #1e293b;
+
+
   /* Colors - Light Theme Default, inspired by premium finance apps */
   --bg-primary: #f8fafc;
   --bg-secondary: #ffffff;
@@ -25,6 +34,25 @@
   /* Transitions */
   --transition-fast: 0.15s ease-in-out;
   --transition-normal: 0.3s ease-in-out;
+}
+
+.portal-link { 
+  font-size: 11px;
+  font-weight: 700; 
+  color: var(--portal-text-muted); 
+  background: var(--chip-bg); 
+  border: 1px solid var(--border-light); 
+  border-radius: 4px; 
+  padding: 2px 10px; 
+  margin: 1em;
+  text-decoration: none; 
+  letter-spacing: 0.02em; 
+}
+
+.portal-link:hover {
+  background: var(--portal-text-main); 
+  color: var(--portal-text-on-dark); 
+  border-color: var(--portal-text-main); 
 }
 
 /* Dark mode auto-detection */
