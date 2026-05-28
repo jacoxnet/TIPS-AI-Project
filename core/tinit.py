@@ -8,9 +8,7 @@ def register_new_user(request):
     user = User.objects.create_user(username=newusername)
     user.save()
     request.session['username'] = user.username
-    ladder = Ladder.objects.create(user=user)
-    for year in range(ladder.start_year, ladder.end_year + 1):
-        CashFlow.objects.create(ladder=ladder, year=year, amount=DEFAULT_CASH_FLOW_AMOUNT)
+    Ladder.objects.create(user=user)
     return newusername
 
 # clear Tips list and Ladder_values when app is initiated

@@ -12,32 +12,33 @@ DEFAULT_TAX_RATE = 15.0
 class Tips(models.Model):
     tipsId = models.AutoField(primary_key=True)
     cusip = models.CharField(unique=True, max_length=12)
-    dated_date = models.DateField
-    maturity_date = models.DateField
-    coupon_rate = models.FloatField
-    ref_cpi = models.FloatField
-    index_ratio = models.FloatField
+    dated_date = models.DateField()
+    maturity_date = models.DateField()
+    coupon_rate = models.FloatField()
+    ref_cpi = models.FloatField()
+    index_ratio = models.FloatField()
     updated = models.DateTimeField(auto_now=True)
 
-    def to_json(self):
-        return {
-            'cusip': self.cusip,
-            'dated_date': self.dated_date,
-            'maturity_date': self.maturity_date,
-            'coupon_rate': self.coupon_rate,
-            'ref_cpi': self.ref_cpi,
-            'index_ratio': self.index_ratio
-        }
+    # def to_dict(self):
+    #     return {
+    #         'cusip': self.cusip,
+    #         'dated_date': self.dated_date,
+    #         'maturity_date': self.maturity_date,
+    #         'coupon_rate': self.coupon_rate,
+    #         'ref_cpi': self.ref_cpi,
+    #         'index_ratio': self.index_ratio,
+    #         'updated': self.updated
+    #     }
+
     def __str__(self):
-        return json.dumps(self.to_json())
+        return f"id: {self.tipsId}, cusip: {self.cusip}, dated_date: {self.dated_date}, maturity_date: {self.maturity_date}, coupon_rate: {self.coupon_rate}, ref_cpi: {self.ref_cpi}, index_ratio: {self.index_ratio}, updated: {self.updated}"
 
 class Cpi(models.Model):
     as_of_date = models.DateField(unique=True)
-    cpi_value = models.FloatField
-    updated = models.DateTimeField
+    cpi_value = models.FloatField()
+    updated = models.DateTimeField()
 
 class CashFlow(models.Model):
-    ladder = models.ForeignKey('Ladder', on_delete=models.CASCADE)
     year = models.IntegerField()
     amount = models.FloatField(default=DEFAULT_CASH_FLOW_AMOUNT)
 
@@ -47,8 +48,7 @@ class Ladder(models.Model):
     tax_rate = models.FloatField(default=DEFAULT_TAX_RATE)
     start_year = models.IntegerField(default=DEFAULT_START_YEAR)
     end_year = models.IntegerField(default=DEFAULT_END_YEAR)
-    base_cash_flow = models.ForeignKey(CashFlow, on_delete=models.CASCADE, null=True, default=None, related_name='base_cash_flow')
-    additional_flows = models.ManyToManyField(CashFlow, blank=True, related_name='additional_flows')
+    cash_flows = models.ManyToManyField(CashFlow, blank=True, related_name='cash_flows')
     future_inflation = models.FloatField(default=0.0)
     use_pretax = models.BooleanField(default=False)
     inflate_base_cash_flow = models.BooleanField(default=False)
