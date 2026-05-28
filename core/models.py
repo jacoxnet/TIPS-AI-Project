@@ -1,6 +1,5 @@
 from django.db import models
 from django.contrib.auth.models import User
-import json
 
 DEFAULT_CASH_FLOW_AMOUNT = 10000.00
 DEFAULT_BASE_CASH_FLOW_DATE = '2024-01-01'
@@ -19,24 +18,23 @@ class Tips(models.Model):
     index_ratio = models.FloatField()
     updated = models.DateTimeField(auto_now=True)
 
-    # def to_dict(self):
-    #     return {
-    #         'cusip': self.cusip,
-    #         'dated_date': self.dated_date,
-    #         'maturity_date': self.maturity_date,
-    #         'coupon_rate': self.coupon_rate,
-    #         'ref_cpi': self.ref_cpi,
-    #         'index_ratio': self.index_ratio,
-    #         'updated': self.updated
-    #     }
-
+    def to_dict(self):
+        return {
+            'cusip': self.cusip,
+            'dated_date': self.dated_date.isoformat(),
+            'maturity_date': self.maturity_date.isoformat(),
+            'coupon_rate': self.coupon_rate,
+            'ref_cpi': self.ref_cpi,
+            'index_ratio': self.index_ratio
+        }
+    
     def __str__(self):
-        return f"id: {self.tipsId}, cusip: {self.cusip}, dated_date: {self.dated_date}, maturity_date: {self.maturity_date}, coupon_rate: {self.coupon_rate}, ref_cpi: {self.ref_cpi}, index_ratio: {self.index_ratio}, updated: {self.updated}"
+        return str(self.to_dict())
 
 class Cpi(models.Model):
     as_of_date = models.DateField(unique=True)
     cpi_value = models.FloatField()
-    updated = models.DateTimeField()
+    updated = models.DateTimeField(auto_now=True)
 
 class CashFlow(models.Model):
     year = models.IntegerField()

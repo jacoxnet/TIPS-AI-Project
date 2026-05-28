@@ -30,6 +30,11 @@ def fetch_tips_data():
         print(f"DEBUG: No TIPS data found in database. Exception: {e}")
         most_recent_date = PRETIPSDATE
     
+    # no need to access API if we already retrieved data today
+    if most_recent_date.date() >= datetime.datetime.now(tz=TIMEZONE).date():
+        print("DEBUG: TIPS data is already up to date for today. Skipping API call.")
+        return
+    
     params = {
         "page[size]": 100,
         "sort": "-maturity_date",
@@ -39,6 +44,7 @@ def fetch_tips_data():
         response = requests.get(TIPSURL, params=params, timeout=10)
         response.raise_for_status()
         data = response.json().get('data', [])
+        print(f"DEBUG: Fetched {len(data)} TIPS records from API.")
     except Exception as e:
         print(f"Error fetching TIPS data: {e}")
         
@@ -47,13 +53,17 @@ def fetch_tips_data():
         cusip = item.get('cusip', None)
         if cusip:
             # get or create TIPS with this cusip
-            new_Tips = Tips.objects.get_or_create(cusip=cusip)[0]
-            # set other fields of new Tips
-            new_Tips.dated_date = item.get('dated_date', 'N/A')
-            new_Tips.maturity_date = item.get('maturity_date', 'N/A')
-            new_Tips.coupon_rate = item.get('interest_rate', 'N/A')
-            new_Tips.ref_cpi = item.get('ref_cpi_on_dated_date', 'N/A')
-            new_Tips.save()
+            if not Tips.objects.filter(cusip=cusip).exists():
+                print(f"DEBUG: Adding new TIPS with cusip {cusip} to database.")
+                new_Tips = Tips.objects.create(cusip=cusip, 
+                                               dated_date=item.get('dated_date', 'N/A'), 
+                                               maturity_date=item.get('maturity_date', 'N/A'), 
+                                               coupon_rate=item.get('interest_rate', 'N/A'), 
+                                               ref_cpi=item.get('ref_cpi_on_dated_date', 'N/A'), 
+                                               index_ratio=1.0)
+                new_Tips.save()
+        else:
+            print(f"DEBUG: TIPS with cusip {cusip} already exists in database. Skipping.")
     return
 
 
@@ -63,11 +73,16 @@ def fetch_cpi_data():
     """
     # Determine most recently updated date from the CPI database
     try:
-        most_recent_date = Cpi.objects.order_by('-updated').first().updated
+        most_recent_date = Cpi.objects.all().order_by('-updated').first().updated
         print(f"DEBUG: Most recent CPI data update in database: {most_recent_date}")
     except ObjectDoesNotExist:
         print("DEBUG: No CPI data found in database.")
         most_recent_date = PRETIPSDATE
+    
+    # no need to access API if we already retrieved data today
+    if most_recent_date.date() >= datetime.datetime.now(tz=TIMEZONE).date():
+        print("DEBUG: CPI data is already up to date for today. Skipping API call.")
+        return
     
     params = {
         "series_id": "CPIAUCNS",
@@ -88,7 +103,10 @@ def fetch_cpi_data():
         obdate = obs.get('date', None)
         if obdate:
             # get or create CPI entry with this date
-            new_cpi = Cpi.objects.get_or_create(as_of_date=obdate)[0]
+            if not Cpi.objects.filter(as_of_date=obdate).exists():
+                print(f"DEBUG: Adding new CPI observation for date {obdate} to database.")
+            new_cpi = Cpi.objects.create(as_of_date=obdate, 
+                                         cpi_value = obs.get('value', 1.0))
             # set value field of new CPI obs
             new_cpi.cpi_value = float(obs.get('value', 0.0))
             new_cpi.save()

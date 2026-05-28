@@ -17,7 +17,7 @@
                     <th>CUSIP</th>
                     <th>Dated Date</th>
                     <th>Maturity Date</th>
-                    <th>Interest Rate (%)</th>
+                    <th>Coupon Rate (%)</th>
                     <th>Ref CPI</th>
                     <th>Index Ratio</th>
                 </tr>
@@ -28,9 +28,9 @@
                     <td>{{ tip.cusip }}</td>
                     <td>{{ tip.dated_date }}</td>
                     <td>{{ tip.maturity_date }}</td>
-                    <td>{{ tip.interest_rate }}</td>
-                    <td>{{ tip.ref_cpi }}</td>
-                    <td>{{ tip.index_ratio }}</td>
+                    <td>{{ tip.coupon_rate | floatformat:3 }}</td>
+                    <td>{{ tip.ref_cpi | floatformat:5 }}</td>
+                    <td>{{ tip.index_ratio | floatformat:5 }}</td>
                 </tr>
                 {% empty %}
                 <tr>

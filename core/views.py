@@ -6,10 +6,8 @@ from django.urls import reverse
 from django.shortcuts import render
 from django.conf import settings
 from .fetch import fetch_tips_data, fetch_cpi_data, TIMEZONE
-# from .ladder_calc import calculate_ladder
-# from .tipsdata import Ladder_values, Tips
 from .tinit import register_new_user, clear_data
-from .models import Tips, Ladder, CashFlow
+from .models import Tips, Cpi, Ladder
 
 SAMPLE_CSV_FILE = 'test_sample.csv'
 
@@ -26,7 +24,11 @@ def home_view(request):
     # fetch tips data at put it in Tips.all_tips
     fetch_tips_data()
     # create list of dicts of tips for json serialization
-    tips_data = [tips.to_json() for tips in Tips.objects.all()]
+    tips_data = [tips.to_dict() for tips in Tips.objects.all().order_by('maturity_date')]
+    # print(f"DEBUG: Prepared tips data for rendering: {tips_data}")
+    fetch_cpi_data()
+    cpi_data = [cpi.as_of_date.isoformat() for cpi in Cpi.objects.all().order_by('as_of_date')]
+    print(f"DEBUG: Prepared CPI data for rendering: {cpi_data}")
     return render(request, 'home.html', {
         'tips_data': tips_data, 'tips_date': datetime.datetime.now(tz=TIMEZONE).date().isoformat()})
 
