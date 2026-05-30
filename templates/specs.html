@@ -19,18 +19,18 @@
                         <input type="file" id="loadCsvBtn" accept=".csv" style="display:none;"><button type="button" class="help-icon" data-modal="helpModalLoadCSV" aria-label="Help">?</button>
                     </label>
                 </div>
-                <button type="button" class="btn btn-sm" id="sampleCsvBtn"
-                    style="background: #8a8a8a; color: #fff; border: none; padding: 0.3rem 0.7rem; font-size: 0.75rem; border-radius: 6px; cursor: pointer; white-space: nowrap;">Sample Ladder</button>
+                <button 
+                    type="submit" form="specsForm" class="btn btn-primary" 
+                    style="font-size: 1.125rem; padding: 1rem 2rem">Confirm
+                </button>
             </div>
-            <button type="submit" class="btn btn-primary" style="font-size: 1.125rem; padding: 1rem 2rem;">Confirm
-            Specifications</button>
         </div>
     </div>
 
-    <form id="specForm" action="{% url 'specs' %}" method="POST">
+    <form id="specsForm" action="{% url 'specs' %}" method="POST">
         {% csrf_token %}
         <!-- Hidden input for JSON data to submit to backend -->
-        <input type="hidden" name="spec_data" id="specDataInput">
+        <input type="hidden" name="specs_data" id="specsDataInput">
                 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
             <!-- Basic Parameters -->

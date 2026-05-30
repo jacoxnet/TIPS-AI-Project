@@ -1,4 +1,4 @@
-from core.models import Spec, User
+from core.models import Specs, User
 
 # register new user and return username
 def register_new_user(request):
@@ -10,9 +10,9 @@ def register_new_user(request):
     print(f"DEBUG: Successfully registered new user with username: {newusername}")
     request.session['username'] = user.username
     print(f"getting ready to create ladder for user: {user.username}")
-    l = Spec(spec_user=user)
+    l = Specs(specs_user=user)
     l.save()
-    User.objects.filter(username=newusername).update(spec=l)
+    User.objects.filter(username=newusername).update(specs=l)
     print(f"DEBUG: Successfully created ladder for user: {user.username}")
     return newusername
 
@@ -20,5 +20,5 @@ def register_new_user(request):
 def clear_data(request):
     pass
     # if request.session.get('user', None):
-    #     Spec.objects.filter(spec_user=request.session['user']).delete()
+    #     Specs.objects.filter(specs_user=request.session['user']).delete()
     

@@ -7,7 +7,7 @@ from django.shortcuts import render
 from django.conf import settings
 from .fetch import fetch_tips_data, fetch_cpi_data, TIMEZONE
 from .tinit import register_new_user, clear_data
-from .models import User, Tips, Cpi, Spec, Owned_tips
+from .models import User, Tips, Cpi, Specs, Owned_tips
 
 SAMPLE_CSV_FILE = 'test_sample.csv'
 
@@ -39,10 +39,17 @@ def specs_view(request):
     if not username:
         return HttpResponseRedirect(reverse('init'))
     print(f"DEBUG: ladder specs view accessed by user: {username}")
-    # create list of dicts of tips for transfer to front end
-    # tips_data = [tips.to_dict() for tips in Tips.objects.all()]
-    specs_data = User.objects.filter(username=username).first().spec_user.to_dict()
-    print(f"DEBUG: Prepared specs data for rendering: {specs_data}")
+    if request.method == 'POST':
+        specs_data = json.loads(request.POST.get('specs_data'))
+        print(f'DEBUG: got specs_data from POST: {specs_data}')
+        User.objects.filter(username=username).first().specs_user.from_dict(specs_data)
+    else:
+        # request method is GET
+        # create list of dicts of tips for transfer to front end
+        # tips_data = [tips.to_dict() for tips in Tips.objects.all()]
+        specs_data = User.objects.filter(username=username).first().specs_user.to_dict()
+        print(f"DEBUG: Prepared specs data for rendering: {specs_data}")
+    # either GET or POST return data to specs.html
     return render(request, 'specs.html', {
         # 'tips_data': tips_data,
         'specs_data': specs_data

@@ -7,6 +7,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const taxEffectInflation = document.getElementById('taxEffectInflation');
     const assumedInflationRateContainer = document.getElementById('assumedInflationRateContainer');
     const assumedInflationRate = document.getElementById('assumedInflationRate');
+    const specsForm = document.getElementById('specsForm');
+    const specsDataInput = document.getElementById('specsDataInput');
 
 
     if (taxEffectInflation && assumedInflationRateContainer && assumedInflationRate) {
@@ -72,7 +74,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function getBaseCashFlowDate() {
         const m = document.getElementById('baseCashFlowMonth').value;
         const y = document.getElementById('baseCashFlowYear').value;
-        if (m && y) return `${y}-${m}`;
+        if (m && y) return `${y}-${m}-01`; // add day for YYYY-MM-DD format required by Django
         return '';
     }
 
@@ -110,9 +112,9 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     //--- Form Submission / Gathering Data ---
-    specForm.addEventListener('submit', (e) => {
+    specsForm.addEventListener('submit', (e) => {
         e.preventDefault();
-
+        console.log('submitting specsForm code')
         const payload = {
             tax_rate: parseFloat(document.getElementById('taxRate').value),
             start_year: parseInt(document.getElementById('startYear').value, 10),
@@ -133,16 +135,17 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         });
 
-        specDataInput.value = JSON.stringify(payload);
-        specForm.submit();
+        specsDataInput.value = JSON.stringify(payload);
+        console.log("specsdataInput: ", specsDataInput.value);
+        specsForm.submit();
     });
 
     // --- Load Saved Session Data ---
     const savedDataElement = document.getElementById('saved-specs-data');
-    console.log("DEBUG: Attempting to load saved specs data", savedDataElement);
     if (savedDataElement && savedDataElement.textContent && savedDataElement.textContent !== "{}") {
         try {
             const savedData = JSON.parse(savedDataElement.textContent);
+            console.log("DEBUG: Attempting to load saved specs data", savedData);
 
             if ((savedData.start_year !== undefined) && (savedData.start_year !== 0)) {
 
@@ -184,13 +187,11 @@ document.addEventListener('DOMContentLoaded', function () {
                     });
                 }
 
-                
+
             }
         } catch (e) {
-            console.error("Failed to parse saved spec data", e);
+            console.error("Failed to parse saved specs data", e);
         }
     }
 
-    // Initial visibility check
-    updateEmptyRowVisibility();
 });
