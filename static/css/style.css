@@ -15,7 +15,7 @@
   --text-secondary: #475569;
   --accent-primary: #3b82f6;
   --accent-hover: #2563eb;
-  --border-color: #e2e8f0;
+  --border-color: #c4ade6;
 
   --success: #10b981;
   --danger: #ef4444;
@@ -199,6 +199,10 @@ h1 {
 /* Form Styles */
 .form-group {
   margin-bottom: 1.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  padding: 1rem;
 }
 
 label {

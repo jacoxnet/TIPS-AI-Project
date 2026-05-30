@@ -33,7 +33,7 @@ def home_view(request):
     return render(request, 'home.html', {
         'tips_data': tips_data, 'tips_date': datetime.datetime.now(tz=TIMEZONE).date().isoformat()})
 
-def ladder_specs_view(request):
+def specs_view(request):
     # Check if user is in session, if not redirect to init to create new user and ladder
     username = request.session.get('username', None)
     if not username:
@@ -41,11 +41,11 @@ def ladder_specs_view(request):
     print(f"DEBUG: ladder specs view accessed by user: {username}")
     # create list of dicts of tips for transfer to front end
     # tips_data = [tips.to_dict() for tips in Tips.objects.all()]
-    ladder_data = User.objects.filter(username=username).first().spec_user.to_dict()
-    print(f"DEBUG: Prepared ladder data for rendering: {ladder_data}")
-    return render(request, 'ladder_specs.html', {
+    specs_data = User.objects.filter(username=username).first().spec_user.to_dict()
+    print(f"DEBUG: Prepared specs data for rendering: {specs_data}")
+    return render(request, 'specs.html', {
         # 'tips_data': tips_data,
-        'ladder_data': ladder_data
+        'specs_data': specs_data
     })
 
 # def ladder_display_view(request):

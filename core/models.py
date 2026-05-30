@@ -80,7 +80,8 @@ class Spec(models.Model):
     tax_rate = models.FloatField(default=DEFAULT_TAX_RATE)
     start_year = models.IntegerField(default=DEFAULT_START_YEAR)
     end_year = models.IntegerField(default=DEFAULT_END_YEAR)
-    cash_flows = models.ManyToManyField(CashFlow, blank=True, related_name='cash_flows')
+    base_cash_flow = models.FloatField(default=DEFAULT_CASH_FLOW_AMOUNT)
+    addl_cash_flows = models.ManyToManyField(CashFlow, blank=True, related_name='cash_flows')
     future_inflation = models.FloatField(default=0.0)
     use_pretax = models.BooleanField(default=False)
     inflate_base_cash_flow = models.BooleanField(default=False)
@@ -93,7 +94,8 @@ class Spec(models.Model):
             'tax_rate': self.tax_rate,
             'start_year': self.start_year,
             'end_year': self.end_year,
-            'cash_flows': [cf.to_dict() for cf in self.cash_flows.all()],
+            'base_cash_flow': self.base_cash_flow,
+            'addl_cash_flows': [cf.to_dict() for cf in self.addl_cash_flows.all()],
             'future_inflation': self.future_inflation,
             'use_pretax': self.use_pretax,
             'inflate_base_cash_flow': self.inflate_base_cash_flow,

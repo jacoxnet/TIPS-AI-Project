@@ -4,12 +4,10 @@ document.addEventListener('DOMContentLoaded', function () {
     const addCashFlowBtn = document.getElementById('addCashFlowBtn');
     const additionalCashFlowsContainer = document.getElementById('additionalCashFlowsContainer');
 
-    const ladderForm = document.getElementById('ladderForm');
-    const ladderDataInput = document.getElementById('ladderDataInput');
-
     const taxEffectInflation = document.getElementById('taxEffectInflation');
     const assumedInflationRateContainer = document.getElementById('assumedInflationRateContainer');
     const assumedInflationRate = document.getElementById('assumedInflationRate');
+
 
     if (taxEffectInflation && assumedInflationRateContainer && assumedInflationRate) {
         taxEffectInflation.addEventListener('change', () => {
@@ -111,8 +109,8 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // --- Form Submission / Gathering Data ---
-    ladderForm.addEventListener('submit', (e) => {
+    //--- Form Submission / Gathering Data ---
+    specForm.addEventListener('submit', (e) => {
         e.preventDefault();
 
         const payload = {
@@ -135,12 +133,13 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         });
 
-        ladderDataInput.value = JSON.stringify(payload);
-        ladderForm.submit();
+        specDataInput.value = JSON.stringify(payload);
+        specForm.submit();
     });
 
     // --- Load Saved Session Data ---
-    const savedDataElement = document.getElementById('saved-ladder-data');
+    const savedDataElement = document.getElementById('saved-specs-data');
+    console.log("DEBUG: Attempting to load saved specs data", savedDataElement);
     if (savedDataElement && savedDataElement.textContent && savedDataElement.textContent !== "{}") {
         try {
             const savedData = JSON.parse(savedDataElement.textContent);
@@ -148,6 +147,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if ((savedData.start_year !== undefined) && (savedData.start_year !== 0)) {
 
                 if (savedData.tax_rate !== undefined) document.getElementById('taxRate').value = savedData.tax_rate;
+                console.log("DEBUG: Loaded tax_rate", savedData.tax_rate);
                 if (savedData.tax_effect_inflation !== undefined && document.getElementById('taxEffectInflation')) {
                     document.getElementById('taxEffectInflation').value = savedData.tax_effect_inflation ? 'yes' : 'no';
                     document.getElementById('taxEffectInflation').dispatchEvent(new Event('change'));
@@ -187,7 +187,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 
             }
         } catch (e) {
-            console.error("Failed to parse saved ladder data", e);
+            console.error("Failed to parse saved spec data", e);
         }
     }
 
