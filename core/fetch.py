@@ -75,8 +75,8 @@ def fetch_cpi_data():
     try:
         most_recent_date = Cpi.objects.all().order_by('-updated').first().updated
         print(f"DEBUG: Most recent CPI data update in database: {most_recent_date}")
-    except ObjectDoesNotExist:
-        print("DEBUG: No CPI data found in database.")
+    except Exception as e:
+        print(f"DEBUG: No CPI data found in database - error {e}.")
         most_recent_date = PRETIPSDATE
     
     # no need to access API if we already retrieved data today
@@ -102,12 +102,15 @@ def fetch_cpi_data():
     for obs in observations:
         obdate = obs.get('date', None)
         if obdate:
-            # get or create CPI entry with this date
+            # create CPI entry with this date if it doesn't already exist
             if not Cpi.objects.filter(as_of_date=obdate).exists():
                 print(f"DEBUG: Adding new CPI observation for date {obdate} to database.")
-            new_cpi = Cpi.objects.create(as_of_date=obdate, 
-                                         cpi_value = obs.get('value', 1.0))
-            # set value field of new CPI obs
-            new_cpi.cpi_value = float(obs.get('value', 0.0))
-            new_cpi.save()
-
+                # Handle the missing data point for October 2025 by using the hard-coded value
+                if obdate == "2025-10-01":
+                    cpi_value = HARD_CODED_CPI_2025_10
+                    print(f"DEBUG: Using hard-coded CPI value {HARD_CODED_CPI_2025_10} for date {obdate} due to missing data point.")
+                else:
+                    cpi_value = float(obs.get('value', 1.0))
+                new_cpi = Cpi.objects.create(as_of_date=obdate,
+                                             cpi_value = cpi_value)
+                new_cpi.save()
