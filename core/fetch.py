@@ -120,7 +120,7 @@ def fetch_cpi_data():
 
 def add_index_ratios():
     """
-    add index ratios to all TIPS in database that don't have one already.
+    add updated index ratios to all TIPS in database
     """
     current_date = datetime.datetime.now(tz=TIMEZONE)
     # first, calculate the daily cpi value to apply to a tips, which is a proportion between the CPI 
@@ -136,10 +136,7 @@ def add_index_ratios():
     todays_cpi = cpi_3months_ago + ((current_date.day - 1) * (cpi_2months_ago - cpi_3months_ago) / days_in_cm)
     # second, go through tips and check for default index ratio and then update
     for tips in Tips.objects.all():
-        # check if TIPS already has a non-default index_ratio
-        if tips.index_ratio == 1.0:
-            # change default index ratio
-            tips.index_ratio = round((todays_cpi / tips.ref_cpi), 5)
-            print(f'DEBUG adding index ratio of {tips.index_ratio} to cusip {tips.cusip}')
-            tips.save()
-    
+        # update index ratio
+        tips.index_ratio = round((todays_cpi / tips.ref_cpi), 5)
+        print(f'DEBUG adding index ratio of {tips.index_ratio} to cusip {tips.cusip}')
+        tips.save()
