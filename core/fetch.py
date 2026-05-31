@@ -1,5 +1,7 @@
 import requests
 import datetime
+from calendar import monthrange
+from dateutil.relativedelta import relativedelta
 import os
 from .models import Tips, Cpi
 from django.core.exceptions import ObjectDoesNotExist
@@ -114,3 +116,30 @@ def fetch_cpi_data():
                 new_cpi = Cpi.objects.create(as_of_date=obdate,
                                              cpi_value = cpi_value)
                 new_cpi.save()
+
+
+def add_index_ratios():
+    """
+    add index ratios to all TIPS in database that don't have one already.
+    """
+    current_date = datetime.datetime.now(tz=TIMEZONE)
+    # first, calculate the daily cpi value to apply to a tips, which is a proportion between the CPI 
+    # as_of_date three months ago and two months ago divided by the number of days in current month
+    cd_3months_ago = (current_date - relativedelta(months=3)).date().replace(day=1)
+    cd_2months_ago = (current_date - relativedelta(months=2)).date().replace(day=1)
+    # get cpi values for these dates
+    cpi_3months_ago = Cpi.objects.get(as_of_date=cd_3months_ago).cpi_value
+    cpi_2months_ago = Cpi.objects.get(as_of_date=cd_2months_ago).cpi_value
+    # get number of days in current month
+    days_in_cm = monthrange(current_date.year, current_date.month)[1]
+    # calculate today's cpi including multiple of daily cpi
+    todays_cpi = cpi_3months_ago + ((current_date.day - 1) * (cpi_2months_ago - cpi_3months_ago) / days_in_cm)
+    # second, go through tips and check for default index ratio and then update
+    for tips in Tips.objects.all():
+        # check if TIPS already has a non-default index_ratio
+        if tips.index_ratio == 1.0:
+            # change default index ratio
+            tips.index_ratio = round((todays_cpi / tips.ref_cpi), 5)
+            print(f'DEBUG adding index ratio of {tips.index_ratio} to cusip {tips.cusip}')
+            tips.save()
+    

@@ -5,7 +5,7 @@ from django.http import HttpResponseRedirect, JsonResponse
 from django.urls import reverse
 from django.shortcuts import render
 from django.conf import settings
-from .fetch import fetch_tips_data, fetch_cpi_data, TIMEZONE
+from .fetch import fetch_tips_data, fetch_cpi_data, add_index_ratios, TIMEZONE
 from .tinit import register_new_user, clear_data
 from .models import User, Tips, Cpi, Specs, Owned_tips
 
@@ -24,12 +24,11 @@ def home_view(request):
     print(f"DEBUG: Home view accessed by user: {username}")
     # fetch tips data at put it in Tips.all_tips
     fetch_tips_data()
+    fetch_cpi_data()
+    add_index_ratios()
     # create list of dicts of tips for json serialization
     tips_data = [tips.to_dict() for tips in Tips.objects.all()]
     # print(f"DEBUG: Prepared tips data for rendering: {tips_data}")
-    fetch_cpi_data()
-    cpi_data = [cpi.as_of_date.isoformat() for cpi in Cpi.objects.all().order_by('as_of_date')]
-    # print(f"DEBUG: Prepared CPI data for rendering: {cpi_data}")
     return render(request, 'home.html', {
         'tips_data': tips_data, 'tips_date': datetime.datetime.now(tz=TIMEZONE).date().isoformat()})
 
