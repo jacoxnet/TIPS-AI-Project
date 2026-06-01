@@ -37,21 +37,47 @@ def specs_view(request):
     username = request.session.get('username', None)
     if not username:
         return HttpResponseRedirect(reverse('init'))
-    print(f"DEBUG: ladder specs view accessed by user: {username}")
+    print(f"DEBUG: specs view accessed by user: {username}")
     if request.method == 'POST':
         specs_data = json.loads(request.POST.get('specs_data'))
         print(f'DEBUG: got specs_data from POST: {specs_data}')
-        User.objects.filter(username=username).first().specs_user.from_dict(specs_data)
+        # add specs data to User
+        User.objects.filter(username=username).first().specs.from_dict(specs_data)
     else:
         # request method is GET
         # create list of dicts of tips for transfer to front end
         # tips_data = [tips.to_dict() for tips in Tips.objects.all()]
-        specs_data = User.objects.filter(username=username).first().specs_user.to_dict()
+        specs_data = User.objects.filter(username=username).first().specs.to_dict()
         print(f"DEBUG: Prepared specs data for rendering: {specs_data}")
     # either GET or POST return data to specs.html
     return render(request, 'specs.html', {
         # 'tips_data': tips_data,
         'specs_data': specs_data
+    })
+
+def make_ladder_view(request):
+    # Check if user is in session, if not redirect to init to create new user and ladder
+    username = request.session.get('username', None)
+    if not username:
+        return HttpResponseRedirect(reverse('init'))
+    print(f"DEBUG: make ladder view accessed by user: {username}")
+    if request.method == 'POST':
+        ladder_data = json.loads(request.POST.get('ladder_data'))
+        print(f'DEBUG: got ladder_data from POST: {ladder_data}')
+        # Clear out existing owned tips and add new owned_tips data to User
+        User.objects.filter(username=username).owned_tips.delete()
+        for item in ladder_data:
+            new_tips = Owned_tips.from_dict(item)
+            print(f"DEBUG: adding new owned tips {new_tips}")
+            User.objects.filter(username=username).first().owned_tips.add(new_tips)
+    else:
+        # request method is GET
+        # create list of dicts of tips for transfer to front end
+        tips_data = [otips.to_dict() for otips in User.objects.filter(username=username).first().owned_tips.all()]
+        print(f"DEBUG: Prepared tips data for rendering: {tips_data}")
+    # either GET or POST return data to specs.html
+    return render(request, 'make_ladder.html', {
+        'tips_data': tips_data
     })
 
 # def ladder_display_view(request):

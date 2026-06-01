@@ -136,15 +136,17 @@ class Owned_tips(models.Model):
 
     def to_dict(self):
         return {
+            'id': self.owned_tips_id,
             'username': self.owned_tips_user.username,
-            'cusip': self.tips.cusip,
-            'dated_date': self.tips.dated_date.isoformat(),
-            'maturity_date': self.tips.maturity_date.isoformat(),
-            'coupon_rate': self.tips.coupon_rate,
-            'index_ratio': self.tips.index_ratio,
             'account_type': self.account_type,
-            'quantity': self.quantity
+            'quantity': self.quantity,
+            'owned_tips': self.tips
         }
+        
+    def from_dict(self, owned_tips_dict):
+        self.account_type = owned_tips_dict['account_type']
+        self.quantity = owned_tips_dict['quantity']
+        self.tips = owned_tips_dict['owned_tips']
     
     def __str__(self):
-        return f"Owned TIPS cusip {self.cusip} for user {self.user.username} with quantity {self.quantity}"
+        return f"Owned TIPS user {self.user.username} cusip {self.tips.cusip} quantity {self.quantity}"
