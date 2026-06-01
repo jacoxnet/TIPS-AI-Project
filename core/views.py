@@ -12,19 +12,25 @@ from .models import User, Tips, Cpi, Specs, Owned_tips
 SAMPLE_CSV_FILE = 'test_sample.csv'
 
 def init_view(request):
+    """
+    Initialize new user and clear ladder
+    """
     clear_data(request)
     register_new_user(request)
     return HttpResponseRedirect(reverse('home'))
 
 def home_view(request):
+    """
+    View available TIPS Data (used to be landing page so still named home)
+    """
     # Check if user is in session, if not redirect to init to create new user and ladder
     username = request.session.get('username', None)
     if not username:
         return HttpResponseRedirect(reverse('init'))
     print(f"DEBUG: Home view accessed by user: {username}")
     # fetch tips data at put it in Tips.all_tips
-    fetch_tips_data()
     fetch_cpi_data()
+    fetch_tips_data()
     add_index_ratios()
     # create list of dicts of tips for json serialization
     tips_data = [tips.to_dict() for tips in Tips.objects.all()]
@@ -33,6 +39,9 @@ def home_view(request):
         'tips_data': tips_data, 'tips_date': datetime.datetime.now(tz=TIMEZONE).date().isoformat()})
 
 def specs_view(request):
+    """
+    View and edit ladder specifications
+    """
     # Check if user is in session, if not redirect to init to create new user and ladder
     username = request.session.get('username', None)
     if not username:
@@ -45,13 +54,10 @@ def specs_view(request):
         User.objects.filter(username=username).first().specs.from_dict(specs_data)
     else:
         # request method is GET
-        # create list of dicts of tips for transfer to front end
-        # tips_data = [tips.to_dict() for tips in Tips.objects.all()]
         specs_data = User.objects.filter(username=username).first().specs.to_dict()
         print(f"DEBUG: Prepared specs data for rendering: {specs_data}")
     # either GET or POST return data to specs.html
     return render(request, 'specs.html', {
-        # 'tips_data': tips_data,
         'specs_data': specs_data
     })
 
@@ -70,14 +76,19 @@ def make_ladder_view(request):
             new_tips = Owned_tips.from_dict(item)
             print(f"DEBUG: adding new owned tips {new_tips}")
             User.objects.filter(username=username).first().owned_tips.add(new_tips)
-    else:
-        # request method is GET
-        # create list of dicts of tips for transfer to front end
-        tips_data = [otips.to_dict() for otips in User.objects.filter(username=username).first().owned_tips.all()]
-        print(f"DEBUG: Prepared tips data for rendering: {tips_data}")
-    # either GET or POST return data to specs.html
+    # start here if request method is GET (continue here from POST)
+    # create list of dicts of tips for transfer to front end
+    tips_data = [tips.to_dict() for tips in Tips.objects.all()] # tips themselves
+    otips_data = [otips.to_dict() for otips in User.objects.filter(username=username).first().owned_tips.all()] # owned tips
+    specs_data = User.objects.filter(username=username).first().specs.to_dict() # ladder specs
+    print(f"DEBUG: Prepared tips data for rendering: TIPS: {tips_data}")
+    print(f"DEBUG: Prepared otips data for rendering: OTIPS: {otips_data}")
+    print(f"DEBUG: Prepared specs data for rendering: SPECS: {specs_data}")
+    # either GET or POST return data to make_ladder.html
     return render(request, 'make_ladder.html', {
-        'tips_data': tips_data
+        'tips_data': tips_data,
+        'otips_data': otips_data,
+        'specs_data': specs_data
     })
 
 # def ladder_display_view(request):

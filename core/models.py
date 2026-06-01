@@ -23,7 +23,7 @@ class Tips(models.Model):
     coupon_rate = models.FloatField()
     ref_cpi = models.FloatField()
     index_ratio = models.FloatField()
-    updated = models.DateTimeField(auto_now=True)
+    updated = models.DateField()
 
     class Meta:
         ordering = ['maturity_date']
@@ -44,7 +44,7 @@ class Tips(models.Model):
 class Cpi(models.Model):
     as_of_date = models.DateField(unique=True)
     cpi_value = models.FloatField()
-    updated = models.DateTimeField(auto_now=True)
+    updated = models.DateField()
 
     class Meta:
         ordering = ['as_of_date']
@@ -140,13 +140,13 @@ class Owned_tips(models.Model):
             'username': self.owned_tips_user.username,
             'account_type': self.account_type,
             'quantity': self.quantity,
-            'owned_tips': self.tips
+            'owned_tips': self.tips.to_dict()
         }
         
     def from_dict(self, owned_tips_dict):
         self.account_type = owned_tips_dict['account_type']
         self.quantity = owned_tips_dict['quantity']
-        self.tips = owned_tips_dict['owned_tips']
+        self.tips = Tips.objects.filter(cusip=owned_tips_dict['owned_tips']['cusip']).first()
     
     def __str__(self):
-        return f"Owned TIPS user {self.user.username} cusip {self.tips.cusip} quantity {self.quantity}"
+        return f"Owned TIPS user {self.owned_tips_user.username} cusip {self.tips.cusip} quantity {self.quantity}"

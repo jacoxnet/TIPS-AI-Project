@@ -13,11 +13,29 @@ from zoneinfo import ZoneInfo
 HARD_CODED_CPI_2025_10 = 324.461
 
 TIMEZONE = ZoneInfo("America/New_York")
-PRETIPSDATE = datetime.datetime(1997, 1, 1, 0, 0, 0)
+PRETIPSDATE = datetime.datetime(1997, 1, 1).date()
 # URL for fetching TIPS summary data
 TIPSURL = "https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v1/accounting/od/tips_cpi_data_summary"
 FRED_API_KEY = os.environ.get("FRED_API_KEY", "")
 CPIURL = "https://api.stlouisfed.org/fred/series/observations"
+
+
+def calculate_dailyCPI():
+    """
+    calculates daily CPI for use in calculating index ratios for TIPS
+    """
+    current_date = datetime.datetime.now(tz=TIMEZONE)
+    # first, calculate the daily cpi value to apply to a tips, which is a proportion between the CPI 
+    # as_of_date three months ago and two months ago divided by the number of days in current month
+    cd_3months_ago = (current_date - relativedelta(months=3)).date().replace(day=1)
+    cd_2months_ago = (current_date - relativedelta(months=2)).date().replace(day=1)
+    # get cpi values for these dates
+    cpi_3months_ago = Cpi.objects.get(as_of_date=cd_3months_ago).cpi_value
+    cpi_2months_ago = Cpi.objects.get(as_of_date=cd_2months_ago).cpi_value
+    # get number of days in current month
+    days_in_cm = monthrange(current_date.year, current_date.month)[1]
+    # calculate today's cpi including multiple of daily cpi
+    return cpi_3months_ago + ((current_date.day - 1) * (cpi_2months_ago - cpi_3months_ago) / days_in_cm)
 
 
 def fetch_tips_data():
@@ -33,14 +51,14 @@ def fetch_tips_data():
         most_recent_date = PRETIPSDATE
     
     # no need to access API if we already retrieved data today
-    if most_recent_date.date() >= datetime.datetime.now(tz=TIMEZONE).date():
+    if most_recent_date >= datetime.datetime.now(tz=TIMEZONE).date():
         print("DEBUG: TIPS data is already up to date for today. Skipping API call.")
         return
     
     params = {
         "page[size]": 100,
         "sort": "-maturity_date",
-        "filter": f"dated_date:gte:{most_recent_date.date().isoformat()}"
+        "filter": f"dated_date:gte:{most_recent_date.isoformat()}"
     }
     try:
         response = requests.get(TIPSURL, params=params, timeout=10)
@@ -55,14 +73,18 @@ def fetch_tips_data():
         cusip = item.get('cusip', None)
         if cusip:
             # get or create TIPS with this cusip
+            # then update index ratio
             if not Tips.objects.filter(cusip=cusip).exists():
                 print(f"DEBUG: Adding new TIPS with cusip {cusip} to database.")
+                todays_CPI = calculate_dailyCPI()
                 new_Tips = Tips.objects.create(cusip=cusip, 
                                                dated_date=item.get('dated_date', 'N/A'), 
                                                maturity_date=item.get('maturity_date', 'N/A'), 
                                                coupon_rate=item.get('interest_rate', 'N/A'), 
-                                               ref_cpi=item.get('ref_cpi_on_dated_date', 'N/A'), 
+                                               ref_cpi=item.get('ref_cpi_on_dated_date', 'N/A'),
+                                               updated=datetime.datetime.now(tz=TIMEZONE).date(),
                                                index_ratio=1.0)
+                new_Tips.index_ratio = round(todays_CPI / float(new_Tips.ref_cpi), 5)
                 new_Tips.save()
         else:
             print(f"DEBUG: TIPS with cusip {cusip} already exists in database. Skipping.")
@@ -82,7 +104,7 @@ def fetch_cpi_data():
         most_recent_date = PRETIPSDATE
     
     # no need to access API if we already retrieved data today
-    if most_recent_date.date() >= datetime.datetime.now(tz=TIMEZONE).date():
+    if most_recent_date >= datetime.datetime.now(tz=TIMEZONE).date():
         print("DEBUG: CPI data is already up to date for today. Skipping API call.")
         return
     
@@ -91,7 +113,7 @@ def fetch_cpi_data():
         "api_key": FRED_API_KEY,
         "file_type": "json",
         "sort_order": "desc",
-        "observation_start": most_recent_date.date().isoformat()
+        "observation_start": most_recent_date.isoformat()
         }
         
     try:
@@ -114,29 +136,19 @@ def fetch_cpi_data():
                 else:
                     cpi_value = float(obs.get('value', 1.0))
                 new_cpi = Cpi.objects.create(as_of_date=obdate,
-                                             cpi_value = cpi_value)
+                                             cpi_value = cpi_value,
+                                             updated=datetime.datetime.now(tz=TIMEZONE).date())
                 new_cpi.save()
-
 
 def add_index_ratios():
     """
     add updated index ratios to all TIPS in database
     """
-    current_date = datetime.datetime.now(tz=TIMEZONE)
-    # first, calculate the daily cpi value to apply to a tips, which is a proportion between the CPI 
-    # as_of_date three months ago and two months ago divided by the number of days in current month
-    cd_3months_ago = (current_date - relativedelta(months=3)).date().replace(day=1)
-    cd_2months_ago = (current_date - relativedelta(months=2)).date().replace(day=1)
-    # get cpi values for these dates
-    cpi_3months_ago = Cpi.objects.get(as_of_date=cd_3months_ago).cpi_value
-    cpi_2months_ago = Cpi.objects.get(as_of_date=cd_2months_ago).cpi_value
-    # get number of days in current month
-    days_in_cm = monthrange(current_date.year, current_date.month)[1]
-    # calculate today's cpi including multiple of daily cpi
-    todays_cpi = cpi_3months_ago + ((current_date.day - 1) * (cpi_2months_ago - cpi_3months_ago) / days_in_cm)
-    # second, go through tips and check for default index ratio and then update
-    for tips in Tips.objects.all():
+    todays_cpi = calculate_dailyCPI()
+    old_tips = Tips.objects.exclude(updated=datetime.datetime.now(tz=TIMEZONE).date())
+    for tips in old_tips:
         # update index ratio
         tips.index_ratio = round((todays_cpi / tips.ref_cpi), 5)
+        tips.updated = datetime.datetime.now(tz=TIMEZONE).date()
         print(f'DEBUG adding index ratio of {tips.index_ratio} to cusip {tips.cusip}')
         tips.save()
