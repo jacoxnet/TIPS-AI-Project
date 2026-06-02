@@ -148,7 +148,7 @@ document.addEventListener('DOMContentLoaded', function () {
             </td>
         `;
 
-        const cusipMaturityCouponTypeSelect = tr.querySelector('.tip-id-cusipmaturitycoupon');
+        const cusipMaturityCouponSelect = tr.querySelector('.tip-id-cusipmaturitycoupon');
         const accountTypeSelect = tr.querySelector('.tip-account-type');
         const qtyInput = tr.querySelector('.tip-quantity');
 
@@ -157,26 +157,27 @@ document.addEventListener('DOMContentLoaded', function () {
             const cusipMaturityCouponOption = document.createElement('option');
             cusipMaturityCouponOption.value = tip.dropdownValue;
             cusipMaturityCouponOption.textContent = tip.dropdownText;
-            cusipMaturityCouponTypeSelect.appendChild(cusipMaturityCouponOption);
+            cusipMaturityCouponSelect.appendChild(cusipMaturityCouponOption);
         });
 
         // prefill if editing
         if (prefill) {
-            cusipMaturityCouponTypeSelect.value = prefill.dropdownValue;
+            console.log(`DEBUG: Prefilling entry row with ${prefill.cusipMaturityCoupon}, ${prefill.accountType}, ${prefill.qty}`);
+            cusipMaturityCouponSelect.value = prefill.cusipMaturityCoupon;
             accountTypeSelect.value = prefill.accountType;
             qtyInput.value = prefill.qty;
         }
 
         // Confirm (green check)
         tr.querySelector('.icon-btn-confirm').addEventListener('click', () => {
-            const fields = [cusipMaturityCouponTypeSelect, accountTypeSelect, qtyInput];
+            const fields = [cusipMaturityCouponSelect, accountTypeSelect, qtyInput];
             const isValid = fields.every(f => f.checkValidity() && f.value !== '');
             if (!isValid) {
                 fields.forEach(f => f.reportValidity && f.reportValidity());
                 return;
             }
             tr.replaceWith(createDisplayRow(
-                tipsData.find(t => t.dropdownValue == cusipMaturityCouponTypeSelect.value),
+                tipsData.find(t => t.dropdownValue == cusipMaturityCouponSelect.value),
                 accountTypeSelect.value,
                 qtyInput.value
             ));
