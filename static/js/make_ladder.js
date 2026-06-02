@@ -162,7 +162,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // prefill if editing
         if (prefill) {
-            console.log(`DEBUG: Prefilling entry row with ${prefill.cusipMaturityCoupon}, ${prefill.accountType}, ${prefill.qty}`);
             cusipMaturityCouponSelect.value = prefill.cusipMaturityCoupon;
             accountTypeSelect.value = prefill.accountType;
             qtyInput.value = prefill.qty;
