@@ -10,10 +10,7 @@ DEFAULT_TAX_RATE = 15.0
 # Create your models here.
 
 class User(AbstractUser):
-    # additional customized fields
-    # each user has one specs and many owned tips, with cascade delete so they are deleted if user is deleted
-    specs = models.OneToOneField('Specs', on_delete=models.CASCADE, null=True, blank=True, related_name='user_specs')
-    owned_tips = models.ManyToManyField('Owned_tips', blank=True, related_name='user_owned_tips')
+    pass
 
 class Tips(models.Model):
     tips_id = models.AutoField(primary_key=True)
@@ -59,7 +56,7 @@ class Cpi(models.Model):
         return str(self.to_dict())
 
 class CashFlow(models.Model):
-    cf_user = models.ForeignKey(User, on_delete=models.CASCADE)
+    cf_id = models.AutoField(primary_key=True)
     year = models.IntegerField()
     amount = models.FloatField(default=DEFAULT_CASH_FLOW_AMOUNT)
 
@@ -68,7 +65,6 @@ class CashFlow(models.Model):
 
     def to_dict(self):
         return {
-            'username': self.cf_user.username,
             'year': self.year,
             'amount': self.amount
         }
@@ -76,9 +72,10 @@ class CashFlow(models.Model):
     def __str__(self):
         return str(self.to_dict())
 
+
 class Specs(models.Model):
     specs_id = models.AutoField(primary_key=True)
-    specs_user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='specs_user')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='specs_user')
     tax_rate = models.FloatField(default=DEFAULT_TAX_RATE)
     start_year = models.IntegerField(default=DEFAULT_START_YEAR)
     end_year = models.IntegerField(default=DEFAULT_END_YEAR)
@@ -88,12 +85,12 @@ class Specs(models.Model):
     tax_effect_inflation = models.BooleanField(default=False)
     assumed_inflation_rate = models.FloatField(default=0.0)
     use_pretax = models.BooleanField(default=False)
-    additional_flows = models.ManyToManyField(CashFlow, blank=True, related_name='cash_flows')
+    additional_flows = models.ManyToManyField(CashFlow, related_name='in_specs')
     
     def to_dict(self):
         return {
             'specs_id': self.specs_id,
-            'username': self.specs_user.username,
+            'username': self.user.username,
             'tax_rate': self.tax_rate,
             'start_year': self.start_year,
             'end_year': self.end_year,
@@ -116,37 +113,42 @@ class Specs(models.Model):
         self.tax_effect_inflation = specs_dict['tax_effect_inflation']
         self.assumed_inflation_rate = specs_dict['assumed_inflation_rate']
         self.use_pretax = specs_dict['use_pretax']
+        for cf in self.additional_flows.all():
+            cf.delete()
         for cf in specs_dict['additional_flows']:
-            CashFlow.objects.update_or_create(cf_user=self.specs_user, year=cf['year'], defaults={'amount': cf['amount']})
+            self.additional_flows.add(CashFlow.objects.create(year=cf['year'], amount=cf['amount']))
         self.save()
 
     def __str__(self):
-        return f"Specs with id {self.specs_id} for user {self.specs_user.username} covering years {self.start_year} to {self.end_year}"
+        return str(self.to_dict())
+
 
 class Owned_tips(models.Model):
     owned_tips_id = models.AutoField(primary_key=True)
-    owned_tips_user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='owned_tips_user')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='owned_tips_user')
     tips = models.ForeignKey(Tips, on_delete=models.CASCADE)
     # account type can be "taxable", "pretax", or "roth"
     account_type = models.CharField(max_length=20, default='pretax')
     quantity = models.IntegerField(default=0)
 
     class Meta:
-        ordering = ['owned_tips_user', 'tips']
+        ordering = ['tips']
 
     def to_dict(self):
         return {
             'id': self.owned_tips_id,
-            'username': self.owned_tips_user.username,
+            'username': self.user.username,
             'account_type': self.account_type,
             'quantity': self.quantity,
             'owned_tips': self.tips.to_dict()
         }
         
     def from_dict(self, owned_tips_dict):
+        self.user = User.objects.filter(username=owned_tips_dict['username']).first()
         self.account_type = owned_tips_dict['account_type']
         self.quantity = owned_tips_dict['quantity']
         self.tips = Tips.objects.filter(cusip=owned_tips_dict['owned_tips']['cusip']).first()
+        self.save()
     
     def __str__(self):
-        return f"Owned TIPS user {self.owned_tips_user.username} cusip {self.tips.cusip} quantity {self.quantity}"
+        return f"Owned TIPS user {self.user.username} cusip {self.tips.cusip} quantity {self.quantity}"

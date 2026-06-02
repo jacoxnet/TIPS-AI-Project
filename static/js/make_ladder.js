@@ -59,36 +59,49 @@ document.addEventListener('DOMContentLoaded', function () {
      * @returns {HTMLTableRowElement}
      */
 
+    // in this function, tip has the elements 
+    //      cusip
+    //      maturity
+    //      coupon
+    //      we add  dropdownValue stored in tipsData to this datastore
+
     function createDisplayRow(tip, accountType, qty) {
+        console.log(`DEBUG: createDisplayRow called with ${tip}, ${accountType}, ${qty}`);
         const tr = document.createElement('tr');
         tr.className = 'owned-tip-row confirmed';
         // Store raw data on the row for easy retrieval
-        tr.dataset.tip = tip;
-        tr.dataset.dropdownValue = tip.dropdownValue;
+        // add dropdown value for easy reference
+        tr.dataset.cusip = tip.cusip;
+        tr.dataset.maturity = tip.maturity;
+        tr.dataset.coupon = tip.coupon;
         tr.dataset.accountType = accountType;
         tr.dataset.qty = qty;
+        tr.dataset.dropdownValue = tipsData.find(t => t.cusip == tip.cusip).dropdownValue;
+        console.log(tr.dataset);
 
+        // add this button back below for in-line add
+        // <button type="button" class="icon-btn icon-btn-add" title="Add new TIPS below">&#43;</button>
         tr.innerHTML = `
             <td class="tip-display-cusip">${tip.cusip}</td>
-            <td class="tip-display-maturity">${tip.maturity_date}</td>
-            <td class="tip-display-coupon">${tip.coupon_rate}%</td>
+            <td class="tip-display-maturity">${tip.maturity}</td>
+            <td class="tip-display-coupon">${tip.coupon}%</td>
             <td class="tip-display-account">${accountTypeLabel(accountType)}</td>
             <td class="tip-display-qty">${qty}</td>
-            <td style="white-space:nowrap;">
-                <button type="button" class="icon-btn icon-btn-add" title="Add new TIPS below">&#43;</button>
+            <td style="white-space:nowrap;">                
                 <button type="button" class="icon-btn icon-btn-edit" title="Edit this TIPS">&#9998;</button>
                 <button type="button" class="icon-btn icon-btn-delete" title="Delete this TIPS">&#128465;</button>
             </td>
         `;
 
+        // add this back to restore + inline-button
         // + button: insert a new entry form row below this display row
-        tr.querySelector('.icon-btn-add').addEventListener('click', () => {
-            // If there's already an open entry form right after, ignore
-            const next = tr.nextElementSibling;
-            if (next && next.classList.contains('tip-entry-row')) return;
-            const entryRow = createEntryRow(null, tr);
-            tr.insertAdjacentElement('afterend', entryRow);
-        });
+        // tr.querySelector('.icon-btn-add').addEventListener('click', () => {
+        //     // If there's already an open entry form right after, ignore
+        //     const next = tr.nextElementSibling;
+        //     if (next && next.classList.contains('tip-entry-row')) return;
+        //     const entryRow = createEntryRow(null, tr);
+        //     tr.insertAdjacentElement('afterend', entryRow);
+        // });
 
         // Edit button: replace this display row with an entry row pre-filled
         tr.querySelector('.icon-btn-edit').addEventListener('click', () => {
@@ -175,11 +188,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 fields.forEach(f => f.reportValidity && f.reportValidity());
                 return;
             }
-            tr.replaceWith(createDisplayRow(
-                tipsData.find(t => t.dropdownValue == cusipMaturityCouponSelect.value),
-                accountTypeSelect.value,
-                qtyInput.value
-            ));
+            const tparm = tipsData.find(t => t.dropdownValue == cusipMaturityCouponSelect.value);
+            tr.replaceWith(createDisplayRow({'cusip': tparm.cusip, 
+                                             'maturity': tparm.maturity_date, 
+                                             'coupon': tparm.coupon_rate},
+                                            accountTypeSelect.value, qtyInput.value));
             updateEmptyRowVisibility();
         });
 
@@ -222,7 +235,7 @@ document.addEventListener('DOMContentLoaded', function () {
         // Collect from confirmed display rows (have dataset stored on them)
         document.querySelectorAll('.owned-tip-row.confirmed').forEach(row => {
             payload.owned_tips.push({
-                cusipMaturityCoupon: row.dataset.cusipMaturityCoupon,
+                cusip: row.dataset.cusip,
                 account_type: row.dataset.accountType,
                 quantity: parseInt(row.dataset.qty, 10)
             });
@@ -237,10 +250,13 @@ document.addEventListener('DOMContentLoaded', function () {
     if (otipsDataElement && otipsDataElement.textContent && otipsDataElement.textContent !== "{}") {
         try {
             const otipsData = JSON.parse(otipsDataElement.textContent);
-            if (otipsData.owned_tips && Array.isArray(otipsData.owned_tips)) {
+            if (Array.isArray(otipsData)) {
                 setTimeout(() => {
-                    otipsData.owned_tips.forEach(otip => {
-                        const displayRow = createDisplayRow(otip.cusip, otip.maturityCoupon, otip.account_type, otip.quantity);
+                    otipsData.forEach(otip => {
+                        const displayRow = createDisplayRow({'cusip': otip.owned_tips.cusip, 
+                                                            'maturity': otip.owned_tips.maturity_date,
+                                                            'coupon': otip.owned_tips.coupon_rate}, 
+                                                            otip.account_type, otip.quantity);
                         ownedTipsTbody.insertBefore(displayRow, addTipsActionRow);
                     });
                     updateEmptyRowVisibility();

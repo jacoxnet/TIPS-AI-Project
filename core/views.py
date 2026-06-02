@@ -46,15 +46,16 @@ def specs_view(request):
     username = request.session.get('username', None)
     if not username:
         return HttpResponseRedirect(reverse('init'))
+    user = User.objects.filter(username=username).first()
     print(f"DEBUG: specs view accessed by user: {username}")
     if request.method == 'POST':
         specs_data = json.loads(request.POST.get('specs_data'))
         print(f'DEBUG: got specs_data from POST: {specs_data}')
         # add specs data to User
-        User.objects.filter(username=username).first().specs.from_dict(specs_data)
+        Specs.objects.filter(user=user).first().from_dict(specs_data)
     else:
         # request method is GET
-        specs_data = User.objects.filter(username=username).first().specs.to_dict()
+        specs_data = Specs.objects.filter(user=user).first().to_dict()
         print(f"DEBUG: Prepared specs data for rendering: {specs_data}")
     # either GET or POST return data to specs.html
     return render(request, 'specs.html', {
@@ -66,24 +67,29 @@ def make_ladder_view(request):
     username = request.session.get('username', None)
     if not username:
         return HttpResponseRedirect(reverse('init'))
+    user = User.objects.filter(username=username).first()
     print(f"DEBUG: make ladder view accessed by user: {username}")
     if request.method == 'POST':
         ladder_data = json.loads(request.POST.get('ladder_data'))
         print(f'DEBUG: got ladder_data from POST: {ladder_data}')
-        # Clear out existing owned tips and add new owned_tips data to User
-        User.objects.filter(username=username).owned_tips.delete()
-        for item in ladder_data:
-            new_tips = Owned_tips.from_dict(item)
-            print(f"DEBUG: adding new owned tips {new_tips}")
-            User.objects.filter(username=username).first().owned_tips.add(new_tips)
+        # Clear out existing owned tips
+        Owned_tips.objects.filter(user=user).delete()
+        for item in ladder_data['owned_tips']:
+            print(f"DEBUG: processing item {item['cusip']}, {item['account_type']}, {item['quantity']}")
+            new_otips = Owned_tips.objects.create(user=user, 
+                                                 tips=Tips.objects.filter(cusip=item['cusip']).first(),
+                                                 account_type=item['account_type'],
+                                                 quantity=item['quantity'])
+            new_otips.save()
+            print(f"DEBUG: adding new owned tips {new_otips}")
     # start here if request method is GET (continue here from POST)
     # create list of dicts of tips for transfer to front end
     tips_data = [tips.to_dict() for tips in Tips.objects.all()] # tips themselves
-    otips_data = [otips.to_dict() for otips in User.objects.filter(username=username).first().owned_tips.all()] # owned tips
-    specs_data = User.objects.filter(username=username).first().specs.to_dict() # ladder specs
-    print(f"DEBUG: Prepared tips data for rendering: TIPS: {tips_data}")
+    otips_data = [otips.to_dict() for otips in Owned_tips.objects.filter(user=user).all()]
+    specs_data = Specs.objects.filter(user=user).first().to_dict()
+    # print(f"DEBUG: Prepared tips data for rendering: TIPS: {tips_data}")
     print(f"DEBUG: Prepared otips data for rendering: OTIPS: {otips_data}")
-    print(f"DEBUG: Prepared specs data for rendering: SPECS: {specs_data}")
+    # print(f"DEBUG: Prepared specs data for rendering: SPECS: {specs_data}")
     # either GET or POST return data to make_ladder.html
     return render(request, 'make_ladder.html', {
         'tips_data': tips_data,

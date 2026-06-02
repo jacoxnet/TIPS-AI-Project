@@ -3,7 +3,7 @@ from core.models import Specs, User
 # register new user and return username
 def register_new_user(request):
     """
-    temporarily use user12 as username
+    temporarily use user77 as username
     """
     # Generate a unique username using the current timestamp
     # newusername = 'user' + str(User.objects.all().count())
@@ -14,12 +14,10 @@ def register_new_user(request):
     # user.save()
     print(f"DEBUG: Successfully registered new user with username: {newusername}")
     request.session['username'] = user.username
-    print(f"getting ready to create ladder for user: {user.username}")
-    l, _ = Specs.objects.get_or_create(specs_user=user)
-    l.save()
-    User.objects.filter(username=newusername).update(specs=l)
-    print(f"DEBUG: Successfully created ladder for user: {user.username}")
-    return newusername
+    print(f"getting ready to create specs for user: {user.username}")
+    Specs.objects.get_or_create(user=user)
+    print(f"DEBUG: Successfully created specs for user: {user.username}")
+    return user
 
 # delete all user information if user in session
 def clear_data(request):
