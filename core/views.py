@@ -8,6 +8,7 @@ from django.conf import settings
 from .fetch import fetch_tips_data, fetch_cpi_data, add_index_ratios, TIMEZONE
 from .tinit import register_new_user, clear_data
 from .models import User, Tips, Cpi, Specs, Owned_tips
+from .ladder_calc import calculate_ladder
 
 SAMPLE_CSV_FILE = 'test_sample.csv'
 
@@ -97,58 +98,38 @@ def make_ladder_view(request):
         'specs_data': specs_data
     })
 
-# def ladder_display_view(request):
-#     # Check if user is in session, if not redirect to init to create new user and ladder
-#     username = request.session.get('username', None)
-#     if not username:
-#         return HttpResponseRedirect(reverse('init'))
-#     print(f"DEBUG: ladder_display vew accessed by user: {username}")
+def ladder_display_view(request):
+    # Check if user is in session, if not redirect to init to create new user and ladder
+    username = request.session.get('username', None)
+    if not username:
+        return HttpResponseRedirect(reverse('init'))
+    user = User.objects.filter(username=username).first()
+    print(f"DEBUG: ladder_display vew accessed by user: {username}")
 
-#     context = {}
-#     if request.method == 'POST':
-#         ladder_data = request.POST.get('ladder_data')
-#         if ladder_data:
-#             ladderp = Ladder_values().from_json(ladder_data)
-            
-#             # If the payload indicates clearing data (start_year == 0)
-#             if ladderp.start_year == 0:
-#                 if 'ladder_data' in request.session:
-#                     del request.session['ladder_data']
-#                 context = {}
-#             else:
-#                 # Save to session for persistence when returning
-#                 request.session['ladder_data'] = ladder_data
-#                 try:
-#                     results = calculate_ladder(ladderp)
-#                     context['ladder_years'] = results
-#                     context['tax_effect_inflation'] = getattr(ladderp, 'tax_effect_inflation', False)
-#                     context['use_pretax'] = getattr(ladderp, 'use_pretax', False)
-#                 except Exception as e:
-#                     context['error'] = str(e)
-#         else:
-#             context['error'] = 'No ladder data provided.'
-#     else:
-#         # request method is GET
-#         # test for persisting ladder data - calculate ladder if data there
-#         ladder_data = request.session.get('ladder_data')
-#         if ladder_data:
-#             ladderp = Ladder_values().from_json(ladder_data)
-#             if ladderp.start_year != 0:
-#                 results = calculate_ladder(ladderp)
-#                 context['ladder_years'] = results
-#                 context['tax_effect_inflation'] = getattr(ladderp, 'tax_effect_inflation', False)
-#                 context['use_pretax'] = getattr(ladderp, 'use_pretax', False)
-
-#     if 'ladder_years' in context:
-#         total_balance = sum(row['balance'] for row in context['ladder_years'])
-#         context['total_balance'] = total_balance
-#         context['total_shortfall'] = -total_balance if total_balance < 0 else 0
-#         total_pretax_balance = sum(row['pretax_balance'] for row in context['ladder_years'])
-#         context['total_pretax_balance'] = total_pretax_balance
-#         context['total_pretax_shortfall'] = -total_pretax_balance if total_pretax_balance < 0 else 0
-
-#     return render(request, 'ladder_display.html', context)
-
+    # check if there are any owned tips. if not send error to template
+    if Owned_tips.objects.filter(user=user).count() == 0:
+        return render(request, 'ladder_display.html', {
+            'error': 'No owned tips found.'
+        })
+    # calculate ladder results
+    ladder_years = calculate_ladder(user)
+    # prepare data for display template
+    total_balance = sum(row['balance'] for row in ladder_years)
+    total_pretax_balance = sum(row['pretax_balance'] for row in ladder_years)
+    total_shortfall = -total_balance if total_balance < 0 else 0
+    total_pretax_shortfall = -total_pretax_balance if total_pretax_balance < 0 else 0
+    specs = Specs.objects.filter(user=user).first()
+    
+    return render(request, 'ladder_display.html', {
+        'ladder_years': ladder_years,
+        'tax_effect_inflation': specs.tax_effect_inflation,
+        'use_pretax': specs.use_pretax,
+        'total_balance': total_balance,
+        'total_pretax_balance': total_pretax_balance,
+        'total_shortfall': total_shortfall,
+        'total_pretax_shortfall': total_pretax_shortfall
+    })
+    
 def clear_ladder_view(request):
     clear_data(request)
     return HttpResponseRedirect(reverse('home'))
