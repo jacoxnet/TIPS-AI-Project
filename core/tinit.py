@@ -1,4 +1,6 @@
 from core.models import Specs, User
+from core.dbstuff import load_default_specs, clear_all_otips
+
 
 # register new user and return username
 def register_new_user(request):
@@ -15,13 +17,8 @@ def register_new_user(request):
     print(f"DEBUG: Successfully registered new user with username: {newusername}")
     request.session['username'] = user.username
     print(f"getting ready to create specs for user: {user.username}")
-    Specs.objects.get_or_create(user=user)
-    print(f"DEBUG: Successfully created specs for user: {user.username}")
+    load_default_specs(user)
+    # for testing don't clear otips with following statement
+    # clear_all_otips(user)
+    print(f"DEBUG: Successfully loaded default specs, didn't clear otips (testing) user: {user.username}")
     return user
-
-# delete all user information if user in session
-def clear_data(request):
-    pass
-    # if request.session.get('user', None):
-    #     Specs.objects.filter(specs_user=request.session['user']).delete()
-    

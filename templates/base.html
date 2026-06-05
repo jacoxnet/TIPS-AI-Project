@@ -16,16 +16,15 @@
 
 <body>
     <nav class="navbar">
+        <a href="https://aerokam.github.io/Treasuries/" class="portal-link">&#8592;Portal</a>
         <div class="nav-container">
-            <a href="https://aerokam.github.io/Treasuries/" class="portal-link">&#8592;Portal</a>
             <a href="{% url 'home' %}" class="nav-brand">After-Tax TIPS Ladder Calculator</a>
             <div class="nav-links">
-                <a href="{% url 'specs' %}" class="nav-link">Ladder Specifications</a>
-                <a href="{% url 'make_ladder' %}" class="nav-link">Make Your Ladder</a>
+                <a href="{% url 'specs' %}" class="nav-link">Ladder Parameters</a>
+                <a href="{% url 'make_ladder' %}" class="nav-link">Build Your Ladder</a>
                 <a href="{% url 'ladder_display' %}" class="nav-link">Display Results</a>
-                <a href="{% url 'home' %}" class="nav-link">TIPS Available</a>
-                <a href="{% url 'clear_ladder' %}" class="nav-link" style="color: var(--danger);"
-                   onclick="return confirm('Are you sure you want to clear all ladder data?');">Clear Ladder Data</a>
+                <a href="{% url 'home' %}" class="nav-link">Outstanding TIPS</a>
+                <a href="{% url 'save_load' %}" class="nav-link">Save/Load Data</a>
             </div>
         </div>
     </nav>

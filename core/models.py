@@ -89,8 +89,6 @@ class Specs(models.Model):
     
     def to_dict(self):
         return {
-            'specs_id': self.specs_id,
-            'username': self.user.username,
             'tax_rate': self.tax_rate,
             'start_year': self.start_year,
             'end_year': self.end_year,
@@ -136,18 +134,16 @@ class Owned_tips(models.Model):
 
     def to_dict(self):
         return {
-            'id': self.owned_tips_id,
-            'username': self.user.username,
             'account_type': self.account_type,
             'quantity': self.quantity,
-            'owned_tips': self.tips.to_dict()
-        }
+            'cusip': self.tips.cusip,
+            'maturity_date': self.tips.maturity_date,
+            'coupon_rate': self.tips.coupon_rate}
         
     def from_dict(self, owned_tips_dict):
-        self.user = User.objects.filter(username=owned_tips_dict['username']).first()
         self.account_type = owned_tips_dict['account_type']
         self.quantity = owned_tips_dict['quantity']
-        self.tips = Tips.objects.filter(cusip=owned_tips_dict['owned_tips']['cusip']).first()
+        self.tips = Tips.objects.filter(cusip=owned_tips_dict['cusip']).first()
         self.save()
     
     def __str__(self):

@@ -36,23 +36,24 @@
   --transition-normal: 0.3s ease-in-out;
 }
 
-.portal-link { 
+.portal-link {
   font-size: 11px;
-  font-weight: 700; 
-  color: var(--portal-text-muted); 
-  background: var(--chip-bg); 
-  border: 1px solid var(--border-light); 
-  border-radius: 4px; 
-  padding: 2px 10px; 
-  margin: 1em;
-  text-decoration: none; 
-  letter-spacing: 0.02em; 
+  font-weight: 700;
+  color: var(--portal-text-muted);
+  background: var(--chip-bg);
+  border: 1px solid var(--border-light);
+  border-radius: 4px;
+  padding: 2px 10px;
+  margin: 0 auto 0 1em;
+  /*top right bottom left */
+  text-decoration: none;
+  letter-spacing: 0.02em;
 }
 
 .portal-link:hover {
-  background: var(--portal-text-main); 
-  color: var(--portal-text-on-dark); 
-  border-color: var(--portal-text-main); 
+  background: var(--portal-text-main);
+  color: var(--portal-text-on-dark);
+  border-color: var(--portal-text-main);
 }
 
 /* Dark mode auto-detection */
@@ -514,33 +515,39 @@ tbody tr:hover {
 }
 
 /* Modal Markdown Typography styling */
-.markdown-body h1, .markdown-body h2 {
-    margin-top: 1rem;
-    margin-bottom: 0.5rem;
-    border-bottom: 1px solid var(--border-color);
-    padding-bottom: 0.5rem;
+.markdown-body h1,
+.markdown-body h2 {
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.5rem;
 }
+
 .markdown-body ul {
-    margin-left: 2rem;
-    margin-bottom: 1rem;
+  margin-left: 2rem;
+  margin-bottom: 1rem;
 }
+
 .markdown-body li {
-    margin-bottom: 0.5rem;
+  margin-bottom: 0.5rem;
 }
+
 .markdown-body p {
-    margin-bottom: 1rem;
+  margin-bottom: 1rem;
 }
+
 .markdown-body pre {
-    white-space: pre-wrap;
-    word-wrap: break-word;
-    background-color: var(--bg-primary);
-    padding: 1rem;
-    border-radius: var(--radius-md);
-    overflow-x: auto;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  background-color: var(--bg-primary);
+  padding: 1rem;
+  border-radius: var(--radius-md);
+  overflow-x: auto;
 }
+
 .markdown-body code {
-    white-space: pre-wrap;
-    word-wrap: break-word;
+  white-space: pre-wrap;
+  word-wrap: break-word;
 }
 
 /* Help icon button */

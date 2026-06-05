@@ -6,9 +6,10 @@ from django.urls import reverse
 from django.shortcuts import render
 from django.conf import settings
 from .fetch import fetch_tips_data, fetch_cpi_data, add_index_ratios, TIMEZONE
-from .tinit import register_new_user, clear_data
+from .tinit import register_new_user
 from .models import User, Tips, Cpi, Specs, Owned_tips
 from .ladder_calc import calculate_ladder
+from core.dbstuff import clear_all_otips, add_new_otips
 
 SAMPLE_CSV_FILE = 'test_sample.csv'
 
@@ -16,7 +17,7 @@ def init_view(request):
     """
     Initialize new user and clear ladder
     """
-    clear_data(request)
+    
     register_new_user(request)
     return HttpResponseRedirect(reverse('home'))
 
@@ -74,15 +75,9 @@ def make_ladder_view(request):
         ladder_data = json.loads(request.POST.get('ladder_data'))
         print(f'DEBUG: got ladder_data from POST: {ladder_data}')
         # Clear out existing owned tips
-        Owned_tips.objects.filter(user=user).delete()
-        for item in ladder_data['owned_tips']:
-            print(f"DEBUG: processing item {item['cusip']}, {item['account_type']}, {item['quantity']}")
-            new_otips = Owned_tips.objects.create(user=user, 
-                                                 tips=Tips.objects.filter(cusip=item['cusip']).first(),
-                                                 account_type=item['account_type'],
-                                                 quantity=item['quantity'])
-            new_otips.save()
-            print(f"DEBUG: adding new owned tips {new_otips}")
+        clear_all_otips(user)
+        # add the new otips from the template
+        add_new_otips(user, ladder_data['owned_tips'])
     # start here if request method is GET (continue here from POST)
     # create list of dicts of tips for transfer to front end
     tips_data = [tips.to_dict() for tips in Tips.objects.all()] # tips themselves
@@ -130,10 +125,36 @@ def ladder_display_view(request):
         'total_pretax_shortfall': total_pretax_shortfall
     })
     
-def clear_ladder_view(request):
-    clear_data(request)
-    return HttpResponseRedirect(reverse('home'))
+def save_load_view(request):
+    username = request.session.get('username', None)
+    if not username:
+        return HttpResponseRedirect(reverse('init'))
+    user = User.objects.filter(username=username).first()
+    otips_data = [otips.to_dict() for otips in Owned_tips.objects.filter(user=user).all()]
+    specs_data = Specs.objects.filter(user=user).first().to_dict()
+    return render(request, 'save_load.html', {
+        'specs_data': specs_data,
+        'otips_data': otips_data
+    })
+        
+def import_data_view(request):
+    username = request.session.get('username', None)
+    if request.method != "POST" or not username:
+        return HttpResponseRedirect(reverse('init'))
+    user = User.objects.filter(username=username).first()
+    print(f"DEBUG: import_data_ view accessed by user: {username}")
+    # get data posted from ajax request save/load data
+    data = json.loads(request.POST.get('data'))
+    print('DEBUG: import_data_view retrieved data', data)
+    # Clear out existing owned tips
+    clear_all_otips(user)
+    # Save the new owned tips
+    add_new_otips(user, data['otipsData'])
+    # add new specs
+    Specs.objects.filter(user=user).first().from_dict(data['specsData'])
+    return JsonResponse({'data': 'import success'}, safe=False)
 
+    
 def sample_csv_view(request):
     csv_path = os.path.join(settings.BASE_DIR, 'csv files', SAMPLE_CSV_FILE)
     try:

@@ -32,8 +32,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const ladderForm = document.getElementById('ladderForm');
     const ladderDataInput = document.getElementById('ladderDataInput');
 
-    const saveCsvBtn = document.getElementById('saveCsvBtn');
-    const loadCsvBtn = document.getElementById('loadCsvBtn');
 
     // -----------------------------------------------------------------------
     // --- Owned TIPS (new icon-based UX) ------------------------------------
@@ -92,16 +90,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 <button type="button" class="icon-btn icon-btn-delete" title="Delete this TIPS">&#128465;</button>
             </td>
         `;
-
-        // add this back to restore + inline-button
-        // + button: insert a new entry form row below this display row
-        // tr.querySelector('.icon-btn-add').addEventListener('click', () => {
-        //     // If there's already an open entry form right after, ignore
-        //     const next = tr.nextElementSibling;
-        //     if (next && next.classList.contains('tip-entry-row')) return;
-        //     const entryRow = createEntryRow(null, tr);
-        //     tr.insertAdjacentElement('afterend', entryRow);
-        // });
 
         // Edit button: replace this display row with an entry row pre-filled
         tr.querySelector('.icon-btn-edit').addEventListener('click', () => {
@@ -189,10 +177,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
             const tparm = tipsData.find(t => t.dropdownValue == cusipMaturityCouponSelect.value);
-            tr.replaceWith(createDisplayRow({'cusip': tparm.cusip, 
-                                             'maturity': tparm.maturity_date, 
-                                             'coupon': tparm.coupon_rate},
-                                            accountTypeSelect.value, qtyInput.value));
+            tr.replaceWith(createDisplayRow({
+                'cusip': tparm.cusip,
+                'maturity': tparm.maturity_date,
+                'coupon': tparm.coupon_rate
+            },
+                accountTypeSelect.value, qtyInput.value));
             updateEmptyRowVisibility();
         });
 
@@ -253,10 +243,13 @@ document.addEventListener('DOMContentLoaded', function () {
             if (Array.isArray(otipsData)) {
                 setTimeout(() => {
                     otipsData.forEach(otip => {
-                        const displayRow = createDisplayRow({'cusip': otip.owned_tips.cusip, 
-                                                            'maturity': otip.owned_tips.maturity_date,
-                                                            'coupon': otip.owned_tips.coupon_rate}, 
-                                                            otip.account_type, otip.quantity);
+                        const displayRow = createDisplayRow(
+                            {
+                                'cusip': otip.cusip,
+                                'maturity': otip.maturity_date,
+                                'coupon': otip.coupon_rate
+                            },
+                            otip.account_type, otip.quantity);
                         ownedTipsTbody.insertBefore(displayRow, addTipsActionRow);
                     });
                     updateEmptyRowVisibility();

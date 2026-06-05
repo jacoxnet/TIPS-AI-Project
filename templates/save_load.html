@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Save and Load Data{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="flex justify-between items-center mb-4">
+        <h1 style="margin-top: 0.25rem;">Save/Load Data</h1>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 1.5rem; width: 100%;">
+        <div style="display: flex; align-items: center; gap: 2rem; width: 100%;">
+            <div style="width: 250px; flex-shrink: 0;">
+                <button 
+                    type="button" class="btn btn-secondary btn-sm" id="saveDataBtn" style="width: 100%; margin: 0; padding: 0.5rem 1rem;">Save Data to Local File
+                </button>
+            </div>
+            <p style="margin: 0; color: var(--text-secondary);">Save current parameters and owned TIPS data to a local file.</p>
+        </div>
+        <div style="display: flex; align-items: center; gap: 2rem; width: 100%;">
+            <div style="width: 250px; flex-shrink: 0;">
+                <label class="btn btn-secondary btn-sm"
+                    style="display: inline-flex; justify-content: center; align-items: center; margin: 0; padding: 0.5rem 1rem; cursor: pointer; width: 100%; text-align: center;">
+                    Load Saved Data
+                    <input type="file" accept=".json" id="loadDataBtn" style="display:none;">
+                </label>
+            </div>
+            <p style="margin: 0; color: var(--text-secondary);">Load parameters and owned TIPS data from a file you saved.</p>
+        </div>
+        <div style="display: flex; align-items: center; gap: 2rem; width: 100%;">
+            <div style="width: 250px; flex-shrink: 0;">
+                <label class="btn btn-secondary btn-sm"
+                    style="display: inline-flex; justify-content: center; align-items: center; margin: 0; padding: 0.5rem 1rem; cursor: pointer; width: 100%; text-align: center;">
+                    Load External CSV
+                    <input type="file" accept=".csv" id="loadCsvBtn" style="display:none;">
+                </label>
+            </div>
+            <p style="margin: 0; color: var(--text-secondary);">Load owned TIPS data from another app's CSV file.</p>
+        </div>
+        <div style="display: flex; align-items: center; gap: 2rem; width: 100%;">
+            <div style="width: 250px; flex-shrink: 0;">
+                <button 
+                    type="button" class="btn btn-secondary btn-sm" id="sampleCvsBtn" style="width: 100%; margin: 0; padding: 0.5rem 1rem;">Test Ladder
+                </button>
+            </div>
+            <p style="margin: 0; color: var(--text-secondary);">Load test parameters and a test ladder of owned TIPS.</p>
+        </div>
+        <div style="display: flex; align-items: center; gap: 2rem; width: 100%;">
+            <div style="width: 250px; flex-shrink: 0;">
+                <button 
+                    type="button" class="btn btn-secondary btn-sm" id="clrDataBtn" 
+                    style="width: 100%; margin: 0; padding: 0.5rem 1rem; color: var(--danger);">
+                    Clear All Data
+                </button>
+            </div>
+            <p style="margin: 0; color: var(--text-secondary);">Restore default parameters and clear owned TIPS data.</p>
+        </div>
+    </div>
+</div>
+
+<p>File Content: <span id='fileContent'></span></p>
+
+
+{% endblock %}
+
+{% block extra_js %}
+
+    {{ specs_data|json_script:"saved-specs-data" }}
+    {{ otips_data|json_script:"saved-otips-data"}}
+
+    <script src="{% static 'js/save_load.js' %}?v=8"></script>
+
+    <script>
+        var csrfToken = '{{ csrf_token }}';
+        var importDataURL = "{% url 'import_data' %}";
+    </script>
+
+{% endblock %}
