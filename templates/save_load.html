@@ -41,7 +41,7 @@
         <div style="display: flex; align-items: center; gap: 2rem; width: 100%;">
             <div style="width: 250px; flex-shrink: 0;">
                 <button 
-                    type="button" class="btn btn-secondary btn-sm" id="sampleCvsBtn" style="width: 100%; margin: 0; padding: 0.5rem 1rem;">Test Ladder
+                    type="button" class="btn btn-secondary btn-sm" id="sampleCsvBtn" style="width: 100%; margin: 0; padding: 0.5rem 1rem;">Sample Ladder
                 </button>
             </div>
             <p style="margin: 0; color: var(--text-secondary);">Load test parameters and a test ladder of owned TIPS.</p>
@@ -59,7 +59,8 @@
     </div>
 </div>
 
-<p>File Content: <span id='fileContent'></span></p>
+<p><span id='errorContent' style='color: var(--danger)'></span></p>
+{% comment %} <p>File Content: <span id='fileContent'></span></p> {% endcomment %}
 
 
 {% endblock %}
@@ -74,6 +75,9 @@
     <script>
         var csrfToken = '{{ csrf_token }}';
         var importDataURL = "{% url 'import_data' %}";
+        var importCsvURL = "{% url 'import_csv' %}";
+        var sampleCsvURL = "{% url 'sample_csv' %}";
+        var clrDataURL =  "{% url 'clear_data' %}";
     </script>
 
 {% endblock %}

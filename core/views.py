@@ -1,3 +1,9 @@
+import django.contrib.auth.base_user
+from django.contrib.auth import base_user
+from django.contrib.auth import base_user
+from django.contrib.auth import base_user
+import dataclasses
+from django.utils import datastructures
 import json
 import os
 import datetime
@@ -9,9 +15,9 @@ from .fetch import fetch_tips_data, fetch_cpi_data, add_index_ratios, TIMEZONE
 from .tinit import register_new_user
 from .models import User, Tips, Cpi, Specs, Owned_tips
 from .ladder_calc import calculate_ladder
-from core.dbstuff import clear_all_otips, add_new_otips
+from core.dbstuff import clear_all_otips, add_new_otips, parse_csv
 
-SAMPLE_CSV_FILE = 'test_sample.csv'
+SAMPLE_CSV_FILE = 'sample_ladder.csv'
 
 def init_view(request):
     """
@@ -19,7 +25,7 @@ def init_view(request):
     """
     
     register_new_user(request)
-    return HttpResponseRedirect(reverse('home'))
+    return HttpResponseRedirect(reverse('make_ladder'))
 
 def home_view(request):
     """
@@ -138,6 +144,11 @@ def save_load_view(request):
     })
         
 def import_data_view(request):
+    """
+    This view is called from an ajax request with saved JSON data.
+    It clears the existing owned tips and adds the new ones. 
+    It then returns the updated specs and owned tips data.
+    """
     username = request.session.get('username', None)
     if request.method != "POST" or not username:
         return HttpResponseRedirect(reverse('init'))
@@ -152,14 +163,59 @@ def import_data_view(request):
     add_new_otips(user, data['otipsData'])
     # add new specs
     Specs.objects.filter(user=user).first().from_dict(data['specsData'])
-    return JsonResponse({'data': 'import success'}, safe=False)
+    return JsonResponse({'data': 'Load successful'}, safe=False)
 
+def import_csv_view(request):
+    """
+    This view is called from an ajax request with the uploaded CSV data
+    for adding to tips table. 
+    """
+    username = request.session.get('username', None)
+    if request.method != "POST" or not username:
+        return HttpResponseRedirect(reverse('init'))
+    user = User.objects.filter(username=username).first()
+    print(f"DEBUG: import_csv_view accessed by user: {username}")
+    # get data posted from ajax request save/load data
+    data = request.POST.get('data')
+    print('DEBUG: import_csv_view retrieved data', data)
+    end_year, new_otips = parse_csv(data)
+    if len(new_otips) > 0:
+        # Clear out existing owned tips
+        clear_all_otips(user)
+        # Save the new owned tips
+        add_new_otips(user, new_otips)
+        # update the start and end years
+        Specs.objects.filter(user=user).update(end_year=end_year, start_year=datetime.datetime.now(tz=TIMEZONE).year)
+        return JsonResponse({'data': f'Import successful ({len(new_otips)} TIPS loaded)'}, safe=False)
+    else:
+        return JsonResponse({'data': 'Error: csv import failure'}, safe=False)
     
 def sample_csv_view(request):
+    username = request.session.get('username', None)
+    if not username:
+        return HttpResponseRedirect(reverse('init'))
+    user = User.objects.filter(username=username).first()
+    print(f"DEBUG: sample_csv_view accessed by user: {username}")
     csv_path = os.path.join(settings.BASE_DIR, 'csv files', SAMPLE_CSV_FILE)
     try:
         with open(csv_path, 'r') as f:
             content = f.read()
-        return JsonResponse({'csv_content': content})
-    except FileNotFoundError:
-        return JsonResponse({'error': 'Sample file not found'}, status=404)
+        print('DEBUG: sample_csv retrieved data', content)
+        end_year, new_otips = parse_csv(content)
+        if len(new_otips) > 0:
+            # Clear out existing owned tips
+            clear_all_otips(user)
+            # Save the new owned tips
+            add_new_otips(user, new_otips)
+            # update the start and end years
+            Specs.objects.filter(user=user).update(end_year=end_year, start_year=datetime.datetime.now(tz=TIMEZONE).year)
+            return JsonResponse({'data': f'Sample ladder load successful ({len(new_otips)} TIPS loaded)'}, safe=False)
+        else:
+            return JsonResponse({'data': 'Error: sample ladder import failure'}, safe=False)
+    except Exception:
+        return JsonResponse({'data': 'Error: sample ladder import failure'}, safe=False)
+
+def clear_data_view(request):
+    print(f"DEBUG: clear data view accessed")
+    register_new_user(request)
+    return JsonResponse({'data': f'All data cleared'}, safe=False)

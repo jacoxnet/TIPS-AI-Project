@@ -6,9 +6,12 @@ document.addEventListener('DOMContentLoaded', function () {
     const saveDataBtn = document.getElementById('saveDataBtn');
     const loadDataBtn = document.getElementById('loadDataBtn');
     const loadCsvBtn = document.getElementById('loadCsvBtn');
+    const sampleCsvBtn = document.getElementById('sampleCsvBtn');
+    const clrDataBtn = document.getElementById('clrDataBtn');
 
     // test place to display retrieved file contents
-    const fileContent = document.getElementById('fileContent');
+    // const fileContent = document.getElementById('fileContent');
+    const errorContent = document.getElementById('errorContent');
 
     // --- saved data from elements
     const savedSpecs = document.getElementById('saved-specs-data');
@@ -41,10 +44,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 const writable = await currentFileHandle.createWritable();
                 await writable.write(writeText);
                 await writable.close();
+                errorContent.textContent = "File saved";
 
             } catch (err) {
                 if (err.name !== 'AbortError') {
-                    console.error('File save error:', err);
+                    errorContent.textContent = "File save error";
                 }
             }
         } else {
@@ -56,7 +60,9 @@ document.addEventListener('DOMContentLoaded', function () {
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
+            errorContent.textContent = "File saved";
         }
+
     });
 
     // --- Load App Data from JSON file and send to backend ---
@@ -67,7 +73,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const reader = new FileReader();
         reader.onload = async () => {
             const r = reader.result
-            fileContent.textContent = r;
+            // fileContent.textContent = r;
             const formData = new FormData();
             formData.append('data', r)
             formData.append('csrfmiddlewaretoken', csrfToken);
@@ -77,11 +83,12 @@ document.addEventListener('DOMContentLoaded', function () {
                     body: formData,
                 });
                 const data = await response.json();
-                console.log('success in retrieving data from import data view', data)
+                errorContent.textContent = data.data
             } catch (e) {
                 console.error(e);
+                errorContent.textContent = data.data
             }
-        }
+        };
         reader.onerror = () => { console.log('error reading file') };
         reader.readAsText(file);
         loadDataBtn.value = '';
@@ -93,76 +100,60 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!file) return;
         if (!file.type.startsWith("text/csv")) return;
         const reader = new FileReader();
-        reader.onload = () => {
+        reader.onload = async () => {
             const r = reader.result
-            const parsedCsv = getParsedCsv(r)
-            fileContent.textContent = JSON.stringify(parsedCsv);
-        }
+            console.log('file content is', r, 'type of r is', typeof r)
+            // fileContent.textContent = r;
+            const formData = new FormData();
+            formData.append('data', r)
+            formData.append('csrfmiddlewaretoken', csrfToken);
+            try {
+                const response = await fetch(importCsvURL, {
+                    method: 'POST',
+                    body: formData,
+                });
+                const data = await response.json();
+                errorContent.textContent = data.data
+            } catch (e) {
+                console.error(e);
+                errorContent.textContent = data.data
+            }
+        };
         reader.onerror = () => { console.log('error reading file') };
         reader.readAsText(file);
         loadCsvBtn.value = '';
-    })
+    });
 
-    // -----------------------------------------------------------------------
-    // --- CSV Parse / Apply helpers -----------------------------------------
-    // -----------------------------------------------------------------------
 
-    // Split one CSV line into fields, respecting double-quoted values.
-    function parseCsvLine(line) {
-        let inQuotes = false;
-        let currentVal = '';
-        const vals = [];
-        for (let j = 0; j < line.length; j++) {
-            const char = line[j];
-            if (char === '"') {
-                inQuotes = !inQuotes;
-            } else if (char === ',' && !inQuotes) {
-                vals.push(currentVal);
-                currentVal = '';
-            } else if (char != ' ') {
-                currentVal += char;
-            }
+    // --- Load Sample Ladder -- done by backend ---
+    sampleCsvBtn.addEventListener('click', async () => {
+        try {
+            const response = await fetch(sampleCsvURL, {
+                method: 'GET'
+            });
+            const data = await response.json();
+            errorContent.textContent = data.data
+        } catch (e) {
+            console.error(e);
+            errorContent.textContent = data.data
         }
-        vals.push(currentVal);
-        return vals;
-    }
+        sampleCsvBtn.value = '';
+    });
 
-    // Parse CSV text into a structured object without touching the DOM.
-    // Handles both the full PARAM/ADD_FLOW/OWNED_TIP format and the legacy
-    // simple CUSIP,Quantity format.
-    // Returns { params, additionalFlows, ownedTips } where each ownedTips
-    // entry includes resolved maturityYear and datedYear for optional
-    // start/end year auto-fill.
-    function getParsedCsv(text) {
-        const lines = text.split('\n');
-        const rlines = [];
-        for (const line of lines) {
-            if (!line) continue;
-            rlines.push(parseCsvLine(line));
+
+    // --- Clear Ladder Data -- done by backend ---
+    clrDataBtn.addEventListener('click', async () => {
+        try {
+            const response = await fetch(clrDataURL, {
+                method: 'GET'
+            });
+            const data = await response.json();
+            errorContent.textContent = data.data
+        } catch (e) {
+            console.error(e);
+            errorContent.textContent = data.data
         }
-        return rlines;
-    }
+        sampleCsvBtn.value = '';
+    });
 
-
-
-
-    // --- Sample CSV Load ---
-    const sampleCsvBtn = document.getElementById('sampleCsvBtn');
-    if (sampleCsvBtn) {
-        sampleCsvBtn.addEventListener('click', () => {
-            fetch('/sample-csv/')
-                .then(response => response.json())
-                .then(data => {
-                    if (data.error) {
-                        alert('Error loading sample: ' + data.error);
-                        return;
-                    }
-                    applyCsvData(parseCsvText(data.csv_content));
-                })
-                .catch(err => {
-                    console.error('Error loading sample CSV:', err);
-                    alert('Failed to load sample ladder data.');
-                });
-        });
-    }
 });
