@@ -127,6 +127,7 @@ body {
   color: var(--accent-primary);
   text-decoration: none;
   letter-spacing: -0.02em;
+  margin-left: 10px;
 }
 
 .nav-links {

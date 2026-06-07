@@ -12,13 +12,15 @@
 
     {% load static %}
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="shortcut icon" href="{% static 'favicon.png' %}" />
 </head>
 
 <body>
     <nav class="navbar">
         <a href="https://aerokam.github.io/Treasuries/" class="portal-link">&#8592;Portal</a>
         <div class="nav-container">
-            <a href="{% url 'home' %}" class="nav-brand">After-Tax TIPS Ladder Calculator</a>
+            <img src="{% static 'favicon.png' %}" alt="Logo" style="max-height: 35px; max-width: 35px;">
+            <a href="{% url 'make_ladder' %}" class="nav-brand">After-Tax TIPS Ladder Calculator</a>
             <div class="nav-links">
                 <a href="{% url 'specs' %}" class="nav-link">Ladder Parameters</a>
                 <a href="{% url 'make_ladder' %}" class="nav-link">Build Your Ladder</a>
