@@ -179,7 +179,9 @@ dependencies = [
     { name = "python-dateutil" },
     { name = "python-dotenv" },
     { name = "requests" },
+    { name = "six" },
     { name = "sqlparse" },
+    { name = "tzdata", marker = "sys_platform == 'win32'" },
     { name = "urllib3" },
 ]
 
@@ -191,10 +193,12 @@ requires-dist = [
     { name = "django", specifier = "==6.0.3" },
     { name = "dotenv", specifier = "==0.9.9" },
     { name = "idna", specifier = "==3.11" },
-    { name = "python-dateutil", specifier = ">=2.9.0.post0" },
+    { name = "python-dateutil", specifier = "==2.9.0.post0" },
     { name = "python-dotenv", specifier = "==1.2.2" },
     { name = "requests", specifier = "==2.32.5" },
+    { name = "six", specifier = "==1.17.0" },
     { name = "sqlparse", specifier = "==0.5.5" },
+    { name = "tzdata", marker = "sys_platform == 'win32'", specifier = "==2026.2" },
     { name = "urllib3", specifier = "==2.6.3" },
 ]
 

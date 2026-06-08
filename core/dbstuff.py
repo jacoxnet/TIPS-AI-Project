@@ -13,7 +13,8 @@ def load_default_specs(user):
         Specs.objects.filter(user=user).delete()
     except Exception:
         print(f"DEBUG: error could not delete specs for user {user.username}")
-    Specs.objects.create(user=user)
+    curr_year = datetime.datetime.now(tz=TIMEZONE).year
+    Specs.objects.create(user=user, start_year=curr_year)
     
 def clear_all_otips(user):
     """Clear out existing owned tips for user"""
