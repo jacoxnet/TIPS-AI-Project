@@ -25,6 +25,10 @@ def init_view(request):
     """
     
     register_new_user(request)
+    # fetch tips data at put it in db
+    fetch_cpi_data()
+    fetch_tips_data()
+    add_index_ratios()
     return HttpResponseRedirect(reverse('make_ladder'))
 
 def home_view(request):
