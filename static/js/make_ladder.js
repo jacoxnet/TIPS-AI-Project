@@ -68,14 +68,14 @@ document.addEventListener('DOMContentLoaded', function () {
     function createDisplayRow(tip, accountType, qty, prevQty) {
         const tr = document.createElement('tr');
         tr.className = 'owned-tip-row confirmed';
-        
+
         tr.dataset.cusip = tip.cusip;
         tr.dataset.maturity = tip.maturity;
         tr.dataset.coupon = tip.coupon;
         tr.dataset.accountType = accountType;
         tr.dataset.qty = qty;
         tr.dataset.prevQty = prevQty;
-        
+
         const matchedTip = tipsData.find(t => t.cusip == tip.cusip);
         tr.dataset.dropdownValue = matchedTip ? matchedTip.dropdownValue : '';
 
@@ -191,9 +191,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 fields.forEach(f => f.reportValidity && f.reportValidity());
                 return;
             }
-            
+
             const tparm = tipsData.find(t => t.dropdownValue == cusipMaturityCouponSelect.value);
-            
+
             // Gather all other confirmed tips
             const payload = [];
             document.querySelectorAll('.owned-tip-row.confirmed').forEach(row => {
@@ -204,14 +204,14 @@ document.addEventListener('DOMContentLoaded', function () {
                     quantity: parseInt(row.dataset.qty, 10)
                 });
             });
-            
+
             // Add current new/edited tip
             payload.push({
                 cusip: tparm.cusip,
                 account_type: accountTypeSelect.value,
                 quantity: parseInt(qtyInput.value, 10)
             });
-            
+
             updateOwnedTips(payload);
         });
 
@@ -243,7 +243,7 @@ document.addEventListener('DOMContentLoaded', function () {
      */
     function updateOwnedTips(payload) {
         const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-        
+
         fetch('/update_owned_tips/', {
             method: 'POST',
             headers: {
@@ -252,20 +252,20 @@ document.addEventListener('DOMContentLoaded', function () {
             },
             body: JSON.stringify({ owned_tips: payload })
         })
-        .then(res => res.json())
-        .then(data => {
-            if (data.error) {
-                alert("Error: " + data.error);
-                return;
-            }
-            currentOtipsData = data.otips_data;
-            currentLadderYears = data.ladder_years;
-            renderTable(currentOtipsData, currentLadderYears);
-        })
-        .catch(err => {
-            console.error("Error updating owned tips:", err);
-            alert("Failed to save changes. Please try again.");
-        });
+            .then(res => res.json())
+            .then(data => {
+                if (data.error) {
+                    alert("Error: " + data.error);
+                    return;
+                }
+                currentOtipsData = data.otips_data;
+                currentLadderYears = data.ladder_years;
+                renderTable(currentOtipsData, currentLadderYears);
+            })
+            .catch(err => {
+                console.error("Error updating owned tips:", err);
+                alert("Failed to save changes. Please try again.");
+            });
     }
 
     /**
@@ -298,10 +298,10 @@ document.addEventListener('DOMContentLoaded', function () {
             let displayText = "";
             let displayClass = "";
             if (balance > 0) {
-                displayText = `+$${balance.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                displayText = `+$${balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
                 displayClass = "text-success";
             } else if (balance < 0) {
-                displayText = `-$${Math.abs(balance).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                displayText = `-$${Math.abs(balance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
                 displayClass = "text-danger";
             } else {
                 displayText = "$0.00";
@@ -380,7 +380,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // --- Modal Display Logic ---
     function showChangeListModal() {
         changeListTbody.innerHTML = '';
-        
+
         const changes = [];
         currentOtipsData.forEach(otip => {
             const diff = parseInt(otip.quantity, 10) - parseInt(otip.prev_quantity, 10);
@@ -418,21 +418,21 @@ document.addEventListener('DOMContentLoaded', function () {
                 changeListTbody.appendChild(tr);
             });
         }
-        
+
         changeListModal.style.display = 'block';
     }
 
     function saveChangeListToCsv() {
-        const header = "cusip,maturity_date,coupon_rate,quantity\n";
+        const header = "cusip,maturity_date,coupon_rate,account_type,quantity\n";
         let csvContent = header;
-        
+
         currentOtipsData.forEach(otip => {
             const diff = parseInt(otip.quantity, 10) - parseInt(otip.prev_quantity, 10);
             if (diff !== 0) {
-                csvContent += `${otip.cusip},${otip.maturity_date},${otip.coupon_rate},${diff}\n`;
+                csvContent += `${otip.cusip},${otip.maturity_date},${otip.coupon_rate},${otip.account_type},${diff}\n`;
             }
         });
-        
+
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');

@@ -97,7 +97,7 @@ def fetch_cpi_data():
     """
     # Determine most recently updated date from the CPI database
     try:
-        most_recent_date = Cpi.objects.all().order_by('-updated').first().updated
+        most_recent_date = Cpi.objects.all().order_by('-as_of_date').first().as_of_date
         print(f"DEBUG: Most recent CPI data update in database: {most_recent_date}")
     except Exception as e:
         print(f"DEBUG: No CPI data found in database - error {e}.")
