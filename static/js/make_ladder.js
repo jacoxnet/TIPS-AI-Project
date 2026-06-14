@@ -141,7 +141,7 @@ document.addEventListener('DOMContentLoaded', function () {
         tr.className = 'tip-entry-row';
 
         tr.innerHTML = `
-            <td colspan="2">
+            <td colspan="3">
                 <div style="display:flex; gap:0.4rem; align-items:center; flex-wrap:wrap;">
                     <select class="tip-id-cusipmaturitycoupon" style="flex:1; min-width:160px; padding:0.35rem 0.5rem; font-size:0.85rem;">
                         <option value="" disabled selected>Select a TIPS...</option>

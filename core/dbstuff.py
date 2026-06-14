@@ -26,12 +26,18 @@ def add_new_otips(user, new_owned_tips):
     additional owned tips for the user from the data
     new_owned_tips is in the form {cusip: ___, account_type: _____, quantity:_____}
     """
+    cusips = [item['cusip'] for item in new_owned_tips if 'cusip' in item]
+    tips_map = {t.cusip: t for t in Tips.objects.filter(cusip__in=cusips)}
     for item in new_owned_tips:
         print(f"DEBUG: start processing new owned tips {item}")
         print(f"DEBUG: start processing new owned tips {item['cusip']}, {item['account_type']}, {item['quantity']}")
+        tip_obj = tips_map.get(item['cusip'])
+        if not tip_obj:
+            print(f"DEBUG: cannot find tips with cusip {item['cusip']}")
+            continue
         new_otips = Owned_tips.objects.create(
             user=user, 
-            tips=Tips.objects.filter(cusip=item['cusip']).first(),
+            tips=tip_obj,
             account_type=item['account_type'],
             quantity=int(item['quantity'])
         )
@@ -47,6 +53,8 @@ def parse_csv(csv_text_content):
     f = StringIO(csv_text_content)
     csv_reader = reader(f)
     new_owned_tips_list = []
+    # Pre-fetch all tips to avoid N+1 queries in the parsing loop
+    all_tips = {t.cusip: t for t in Tips.objects.all()}
     for row in csv_reader:
         new_owned_tips = {}
         end_year = datetime.datetime.now(tz=TIMEZONE).year
@@ -56,7 +64,7 @@ def parse_csv(csv_text_content):
             continue
         # retrieve tips to see if valid tips cusip & to save for 
         # start/maturity year calculation
-        tips = Tips.objects.filter(cusip=row[0].strip().upper()).first()
+        tips = all_tips.get(row[0].strip().upper())
         if not tips:
             print("DEBUG: can't find tips cusip", row)
             continue
@@ -81,3 +89,31 @@ def parse_csv(csv_text_content):
         end_year = max(end_year, tips.maturity_date.year)
         new_owned_tips_list.append(new_owned_tips)
     return end_year, new_owned_tips_list
+
+
+def merge_duplicate_otips(user):
+    """
+    Finds and merges duplicate Owned_tips entries (same CUSIP and account_type)
+    for a user by summing their quantities, keeping one database record, and
+    deleting the duplicate records.
+    """
+    otips = Owned_tips.objects.filter(user=user).select_related('tips')
+    seen = {}
+    to_delete = []
+    
+    for otip in otips:
+        if not otip.tips:
+            continue
+        key = (otip.tips.cusip, otip.account_type)
+        if key in seen:
+            primary_otip = seen[key]
+            primary_otip.quantity += otip.quantity
+            to_delete.append(otip.pk)
+        else:
+            seen[key] = otip
+            
+    for primary_otip in seen.values():
+        primary_otip.save()
+        
+    if to_delete:
+        Owned_tips.objects.filter(pk__in=to_delete).delete()

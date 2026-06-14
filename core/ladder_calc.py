@@ -4,7 +4,7 @@ def calculate_ladder(user):
     
     # load db items we'll need
     specs = Specs.objects.filter(user=user).first()
-    otips = Owned_tips.objects.filter(user=user)
+    otips = Owned_tips.objects.filter(user=user).select_related('tips')
     
     # prepare data for use in year-by-year calcs
     tax_rate = specs.tax_rate / 100.0
