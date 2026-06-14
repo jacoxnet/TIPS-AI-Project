@@ -90,8 +90,9 @@ def make_ladder_view(request):
             clear_all_otips(user)
             # add the new otips from the template
             add_new_otips(user, ladder_data['owned_tips'])
-        # Clear snapshot on confirm
-        request.session.pop('otips_snapshot', None)
+
+    # Clear snapshot on page load/refresh/confirmation so we start a fresh session
+    request.session.pop('otips_snapshot', None)
     # start here if request method is GET (continue here from POST)
     
     # Merge any duplicates in database first
