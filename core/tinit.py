@@ -19,5 +19,7 @@ def register_new_user(request):
     print(f"getting ready to create specs for user: {user.username}")
     load_default_specs(user)
     clear_all_otips(user)
+    # clear otips snapshot
+    request.session.pop('otips_snapshot', None)
     print(f"DEBUG: Successfully loaded default specs, cleared otips user: {user.username}")
     return user
