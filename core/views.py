@@ -1,12 +1,9 @@
-import django.contrib.auth.base_user
 from django.contrib.auth import base_user
-from django.contrib.auth import base_user
-from django.contrib.auth import base_user
-import dataclasses
 from django.utils import datastructures
 import json
 import os
 import datetime
+from django.db import transaction
 from django.http import HttpResponseRedirect, JsonResponse
 from django.urls import reverse
 from django.shortcuts import render
@@ -81,7 +78,6 @@ def make_ladder_view(request):
         return HttpResponseRedirect(reverse('init'))
     user = User.objects.filter(username=username).first()
     print(f"DEBUG: make ladder view accessed by user: {username}")
-    from django.db import transaction
     if request.method == 'POST':
         ladder_data = json.loads(request.POST.get('ladder_data'))
         print(f'DEBUG: got ladder_data from POST: {ladder_data}')
@@ -211,7 +207,6 @@ def import_data_view(request):
     # get data posted from ajax request save/load data
     data = json.loads(request.POST.get('data'))
     print('DEBUG: import_data_view retrieved data', data)
-    from django.db import transaction
     with transaction.atomic():
         # Clear out existing owned tips
         clear_all_otips(user)
@@ -225,7 +220,8 @@ def import_data_view(request):
 def import_csv_view(request):
     """
     This view is called from an ajax request with the uploaded CSV data
-    for adding to tips table. 
+    for adding to tips table (and sometimes to specs table when format
+    is old saved format) Calls the parse_csv function.
     """
     username = request.session.get('username', None)
     if request.method != "POST" or not username:
@@ -235,17 +231,21 @@ def import_csv_view(request):
     # get data posted from ajax request save/load data
     data = request.POST.get('data')
     print('DEBUG: import_csv_view retrieved data', data)
-    from django.db import transaction
     with transaction.atomic():
-        end_year, new_otips = parse_csv(data)
+        end_year, new_specs, new_otips = parse_csv(data)
         if len(new_otips) > 0:
+            # update specs if we got specs
+            if len(new_specs) > 0:
+                Specs.objects.get(user=user).from_dict(new_specs)
+            else:
+                # update the start and end years if we only got owned tips
+                Specs.objects.filter(user=user).update(end_year=end_year, start_year=datetime.datetime.now(tz=TIMEZONE).year)
             # Clear out existing owned tips
             clear_all_otips(user)
+            # remove snapshot when we've gotten new tips
+            request.session.pop('otips_snapshot', None)
             # Save the new owned tips
             add_new_otips(user, new_otips)
-            # update the start and end years
-            Specs.objects.filter(user=user).update(end_year=end_year, start_year=datetime.datetime.now(tz=TIMEZONE).year)
-            request.session.pop('otips_snapshot', None)
             return JsonResponse({'data': f'Import successful ({len(new_otips)} TIPS loaded)'}, safe=False)
         else:
             return JsonResponse({'data': 'Error: csv import failure'}, safe=False)
@@ -261,9 +261,9 @@ def sample_csv_view(request):
         with open(csv_path, 'r') as f:
             content = f.read()
         print('DEBUG: sample_csv retrieved data', content)
-        from django.db import transaction
         with transaction.atomic():
-            end_year, new_otips = parse_csv(content)
+            # parse csv - note we're not looking for new specs here
+            end_year, _, new_otips = parse_csv(content)
             if len(new_otips) > 0:
                 # Clear out existing owned tips
                 clear_all_otips(user)
@@ -293,7 +293,6 @@ def update_owned_tips_view(request):
     data = json.loads(request.body)
     incoming_tips = data.get('owned_tips', [])
     
-    from django.db import transaction
     with transaction.atomic():
         # Merge any duplicates in database first
         merge_duplicate_otips(user)

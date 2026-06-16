@@ -106,15 +106,16 @@ class Specs(models.Model):
         self.start_year = specs_dict['start_year']
         self.end_year = specs_dict['end_year']
         self.base_cash_flow = specs_dict['base_cash_flow']
-        self.inflate_base_cf = specs_dict['inflate_base_cf']
+        self.inflate_base_cf = specs_dict.get('inflate_base_cf', False)
         self.base_cash_flow_date = specs_dict['base_cash_flow_date']
         self.tax_effect_inflation = specs_dict['tax_effect_inflation']
         self.assumed_inflation_rate = specs_dict['assumed_inflation_rate']
         self.use_pretax = specs_dict['use_pretax']
         for cf in self.additional_flows.all():
             cf.delete()
-        for cf in specs_dict['additional_flows']:
-            self.additional_flows.add(CashFlow.objects.create(year=cf['year'], amount=cf['amount']))
+        if specs_dict.get('additional_flows', None):
+            for cf in specs_dict['additional_flows']:
+                self.additional_flows.add(CashFlow.objects.create(year=cf['year'], amount=cf['amount']))
         self.save()
 
     def __str__(self):

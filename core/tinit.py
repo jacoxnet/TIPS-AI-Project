@@ -11,9 +11,9 @@ def register_new_user(request):
     newusername = 'user' + str(User.objects.all().count())
     # newusername = 'user77'
     print(f"DEBUG: Attempting to register new user with username: {newusername}")
-    # user = User.objects.create(username=newusername)
-    user, _ = User.objects.get_or_create(username=newusername)
-    # user.save()
+    # create user and save to database
+    user = User.objects.create(username=newusername)
+    user.save()
     print(f"DEBUG: Successfully registered new user with username: {newusername}")
     request.session['username'] = user.username
     print(f"getting ready to create specs for user: {user.username}")
