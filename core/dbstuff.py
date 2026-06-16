@@ -121,7 +121,7 @@ def parse_csv(csv_text_content):
                 new_specs["additional_flows"] = []
             new_specs["additional_flows"].append({'year': row_adj[1], 'amount': row_adj[2]})
             continue
-        # test an
+        # test and process owned tip row
         if row_adj[0] == "owned_tip":
             # old version of app - could be id by cusip or coupon-maturity
             if row_adj[1] == "cusip":
