@@ -1,8 +1,25 @@
-from core.tipsdata import Ladder_values, Tips
+from core.models import Specs, User
+from core.dbstuff import load_default_specs, clear_all_otips
 
-# clear Tips list and Ladder_values when app is initiated
-def clear_data(request):
-    Tips.download_date = None
-    Tips.all_tips = []
-    request.session['ladder_data'] = None
-    
+
+# register new user and return username
+def register_new_user(request):
+    """
+    temporarily use user77 as username
+    """
+    # Generate a unique username using the current timestamp
+    newusername = 'user' + str(User.objects.all().count())
+    # newusername = 'user77'
+    print(f"DEBUG: Attempting to register new user with username: {newusername}")
+    # create user and save to database
+    user = User.objects.create(username=newusername)
+    user.save()
+    print(f"DEBUG: Successfully registered new user with username: {newusername}")
+    request.session['username'] = user.username
+    print(f"getting ready to create specs for user: {user.username}")
+    load_default_specs(user)
+    clear_all_otips(user)
+    # clear otips snapshot
+    request.session.pop('otips_snapshot', None)
+    print(f"DEBUG: Successfully loaded default specs, cleared otips user: {user.username}")
+    return user

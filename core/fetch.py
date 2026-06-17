@@ -1,157 +1,154 @@
 import requests
 import datetime
-from zoneinfo import ZoneInfo
+from calendar import monthrange
+from dateutil.relativedelta import relativedelta
 import os
-
-# set timezone to New York for purpose of downloaded date 
-TIMEZONE = ZoneInfo("America/New_York")
+from .models import Tips, Cpi
+from django.core.exceptions import ObjectDoesNotExist
+from zoneinfo import ZoneInfo
 
 # This is a hard-coded CPI value for October 2025 which replaces the missing data
 # point in the FRED data due to the government shutdown. This value is midway between
 # the September 2025 CPI (324.800) and the November 2025 CPI (324.122).
-
 HARD_CODED_CPI_2025_10 = 324.461
 
-from core.tipsdata import Tips, CpiData
+TIMEZONE = ZoneInfo("America/New_York")
+PRETIPSDATE = datetime.datetime(1997, 1, 1).date()
+# URL for fetching TIPS summary data
+TIPSURL = "https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v1/accounting/od/tips_cpi_data_summary"
+FRED_API_KEY = os.environ.get("FRED_API_KEY", "")
+CPIURL = "https://api.stlouisfed.org/fred/series/observations"
+
+
+def calculate_dailyCPI():
+    """
+    calculates daily CPI for use in calculating index ratios for TIPS
+    """
+    current_date = datetime.datetime.now(tz=TIMEZONE)
+    # first, calculate the daily cpi value to apply to a tips, which is a proportion between the CPI 
+    # as_of_date three months ago and two months ago divided by the number of days in current month
+    cd_3months_ago = (current_date - relativedelta(months=3)).date().replace(day=1)
+    cd_2months_ago = (current_date - relativedelta(months=2)).date().replace(day=1)
+    # get cpi values for these dates
+    cpi_3months_ago = Cpi.objects.get(as_of_date=cd_3months_ago).cpi_value
+    cpi_2months_ago = Cpi.objects.get(as_of_date=cd_2months_ago).cpi_value
+    # get number of days in current month
+    days_in_cm = monthrange(current_date.year, current_date.month)[1]
+    # calculate today's cpi including multiple of daily cpi
+    return cpi_3months_ago + ((current_date.day - 1) * (cpi_2months_ago - cpi_3months_ago) / days_in_cm)
+
 
 def fetch_tips_data():
     """
-    Fetches the latest outstanding TIPS from the Treasury Fiscal Data API.
-    Checks first to see if the TIPS data has already been downloaded for the current date.
-    If so, returns the cached data.
-    
+    Updates TIPS database for most recent values if necessary
     """
-
-    # if already downloaded for today, don't do anything
-    # use the time zone in TIMEZONE
-    if Tips.download_date == datetime.datetime.now(tz=TIMEZONE).date().isoformat():
-        print (f"DEBUG: TIPS data already downloaded for today ({Tips.download_date}). Skipping fetch.")
+    # Determine most recently updated date from the Tips database
+    try:
+        most_recent_date = Tips.objects.all().order_by('-updated').first().updated
+        print(f"DEBUG: Most recent TIPS data update in database: {most_recent_date}")
+    except Exception as e:
+        print(f"DEBUG: No TIPS data found in database. Exception: {e}")
+        most_recent_date = PRETIPSDATE
+    
+    # no need to access API if we already retrieved data today
+    if most_recent_date >= datetime.datetime.now(tz=TIMEZONE).date():
+        print("DEBUG: TIPS data is already up to date for today. Skipping API call.")
         return
-    Tips.all_tips = []
-    url = "https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v1/accounting/od/tips_cpi_data_summary"
+    
     params = {
         "page[size]": 100,
-        "sort": "-maturity_date"
+        "sort": "-maturity_date",
+        "filter": f"dated_date:gte:{most_recent_date.isoformat()}"
     }
     try:
-        response = requests.get(url, params=params, timeout=10)
+        response = requests.get(TIPSURL, params=params, timeout=10)
         response.raise_for_status()
         data = response.json().get('data', [])
+        print(f"DEBUG: Fetched {len(data)} TIPS records from API.")
     except Exception as e:
         print(f"Error fetching TIPS data: {e}")
         
-    # Deduplicate by CUSIP since summaries might have multiple entries per CUSIP for different record dates
-    seen_cusips = set()
+    # Add TIPS to database if necessary, using cusip as unique identifier
     for item in data:
-        cusip = item.get('cusip', 'N/A')
-        if cusip not in seen_cusips:
-            # create new Tips with this downloaded data
-            tips = Tips(
-                cusip=cusip,
-                dated_date=item.get('dated_date', 'N/A'),
-                maturity_date=item.get('maturity_date', 'N/A'),
-                interest_rate=item.get('interest_rate', 'N/A'),
-                ref_cpi=item.get('ref_cpi_on_dated_date', 'N/A')
-            )
-            Tips.all_tips.append(tips)
-            seen_cusips.add(cusip)
-    try:
-        # Fetch detailed data for the current date to get index ratios
-        today = datetime.datetime.now(tz=TIMEZONE).date().isoformat()
-        detail_url = "https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v1/accounting/od/tips_cpi_data_detail"
-        detail_params = {
-            "filter": f"index_date:eq:{today}",
-            "page[size]": 100
-        }
-        detail_response = requests.get(detail_url, params=detail_params, timeout=10)
-        detail_response.raise_for_status()
-        detail_data = detail_response.json().get('data', [])
-    except Exception as e:
-        print(f"Error fetching TIPS data: {e}")
-    
-    # Create a mapping from CUSIP to index_ratio
-    index_ratios = {item.get('cusip'): item.get('index_ratio') for item in detail_data if item.get('cusip')}
-    
-    # Assign index_ratio to each tip
-    for tip in Tips.all_tips:
-        tip.index_ratio = index_ratios.get(tip.cusip, 'N/A')
-
-    # Sort the TIPS by maturity date and set the download date
-    Tips.all_tips.sort(key=lambda x: x.maturity_date)
-    
-    Tips.download_date = datetime.datetime.now(tz=TIMEZONE).date().isoformat()
-    
+        cusip = item.get('cusip', None)
+        if cusip:
+            # get or create TIPS with this cusip
+            # then update index ratio
+            if not Tips.objects.filter(cusip=cusip).exists():
+                print(f"DEBUG: Adding new TIPS with cusip {cusip} to database.")
+                todays_CPI = calculate_dailyCPI()
+                new_Tips = Tips.objects.create(cusip=cusip, 
+                                               dated_date=item.get('dated_date', 'N/A'), 
+                                               maturity_date=item.get('maturity_date', 'N/A'), 
+                                               coupon_rate=item.get('interest_rate', 'N/A'), 
+                                               ref_cpi=item.get('ref_cpi_on_dated_date', 'N/A'),
+                                               updated=datetime.datetime.now(tz=TIMEZONE).date(),
+                                               index_ratio=1.0)
+                new_Tips.index_ratio = round(todays_CPI / float(new_Tips.ref_cpi), 5)
+                new_Tips.save()
+        else:
+            print(f"DEBUG: TIPS with cusip {cusip} already exists in database. Skipping.")
     return
 
 
-def fetch_cpi_data(as_of_date):
+def fetch_cpi_data():
     """
-    Fetches the CPI-U data (CPIAUCNS) from FRED for the latest date and the given as_of_date.
-    Returns a tuple (latest_cpi_value, as_of_cpi_value).
-    If as_of_date is not provided or invalid, returns (1.0, 1.0) so inflation factor is 1.0.
+    Updates the database of CPI-U data and queries FRED for the latest data if not already avaible for today.
     """
-
-    if not as_of_date:
-        return 1.0, 1.0
-        
-    # Ensure as_of_date is in YYYY-MM-DD format (if it's YYYY-MM, append -01)
-    if len(as_of_date) == 7:
-        as_of_date += "-01"
-
-    today = datetime.datetime.now(tz=TIMEZONE).date().isoformat()
-    if CpiData.download_date != today:
-        CpiData.download_date = today
-        CpiData.cpi_cache = {}
-
-    if as_of_date in CpiData.cpi_cache:
-        print(f"DEBUG: CPI data already downloaded for today ({today}) and as_of_date={as_of_date}. Skipping fetch.")
-        return CpiData.cpi_cache[as_of_date]
-
-    api_key = os.environ.get("FRED_API_KEY", "")
-    url = "https://api.stlouisfed.org/fred/series/observations"
+    # Determine most recently updated date from the CPI database
+    try:
+        most_recent_date = Cpi.objects.all().order_by('-as_of_date').first().as_of_date
+        print(f"DEBUG: Most recent CPI data update in database: {most_recent_date}")
+    except Exception as e:
+        print(f"DEBUG: No CPI data found in database - error {e}.")
+        most_recent_date = PRETIPSDATE
     
-    # 1. Fetch Latest CPI
-    params_latest = {
+    # no need to access API if we already retrieved data today
+    if most_recent_date >= datetime.datetime.now(tz=TIMEZONE).date():
+        print("DEBUG: CPI data is already up to date for today. Skipping API call.")
+        return
+    
+    params = {
         "series_id": "CPIAUCNS",
-        "api_key": api_key,
+        "api_key": FRED_API_KEY,
         "file_type": "json",
         "sort_order": "desc",
-        "limit": 1
-    }
-
-    try:
-        res_latest = requests.get(url, params=params_latest, timeout=10)
-        res_latest.raise_for_status()
-        observations_latest = res_latest.json().get('observations', [])
-        print(f"DEBUG Latest CPI: {observations_latest}")
-        latest_cpi = float(observations_latest[0]['value']) if observations_latest else 1.0
-    except Exception as e:
-        print(f"Error fetching latest CPI from FRED: {e}")
-        return 1.0, 1.0
-
-    # 2. Fetch As-Of CPI
-    if as_of_date.startswith("2025-10"):
-        as_of_cpi = HARD_CODED_CPI_2025_10
-        print(f"DEBUG As-Of CPI (hard-coded): {as_of_cpi}")
-    else:
-        # We set observation_end to the as_of_date and get the latest observation before or on that date
-        params_as_of = {
-            "series_id": "CPIAUCNS",
-            "api_key": api_key,
-            "file_type": "json",
-            "sort_order": "desc",
-            "limit": 1,
-            "observation_end": as_of_date
+        "observation_start": most_recent_date.isoformat()
         }
         
-        try:
-            res_as_of = requests.get(url, params=params_as_of, timeout=10)
-            res_as_of.raise_for_status()
-            observations_as_of = res_as_of.json().get('observations', [])
-            print(f"DEBUG As-Of CPI: {observations_as_of}")
-            as_of_cpi = float(observations_as_of[0]['value']) if observations_as_of else 1.0
-        except Exception as e:
-            print(f"Error fetching as-of CPI from FRED: {e}")
-            return 1.0, 1.0
-    CpiData.cpi_cache[as_of_date] = (latest_cpi, as_of_cpi)
-    return latest_cpi, as_of_cpi
+    try:
+        res = requests.get(CPIURL, params=params, timeout=10)
+        res.raise_for_status()
+        observations = res.json().get('observations', [])
+    except Exception as e:
+        print(f"Error fetching TIPS data: {e}")
+    # add to database if necessary, using as_of_date as unique identifier
+    for obs in observations:
+        obdate = obs.get('date', None)
+        if obdate:
+            # create CPI entry with this date if it doesn't already exist
+            if not Cpi.objects.filter(as_of_date=obdate).exists():
+                print(f"DEBUG: Adding new CPI observation for date {obdate} to database.")
+                # Handle the missing data point for October 2025 by using the hard-coded value
+                if obdate == "2025-10-01":
+                    cpi_value = HARD_CODED_CPI_2025_10
+                    print(f"DEBUG: Using hard-coded CPI value {HARD_CODED_CPI_2025_10} for date {obdate} due to missing data point.")
+                else:
+                    cpi_value = float(obs.get('value', 1.0))
+                new_cpi = Cpi.objects.create(as_of_date=obdate,
+                                             cpi_value = cpi_value,
+                                             updated=datetime.datetime.now(tz=TIMEZONE).date())
+                new_cpi.save()
+
+def add_index_ratios():
+    """
+    add updated index ratios to all TIPS in database
+    """
+    todays_cpi = calculate_dailyCPI()
+    old_tips = Tips.objects.exclude(updated=datetime.datetime.now(tz=TIMEZONE).date())
+    for tips in old_tips:
+        # update index ratio
+        tips.index_ratio = round((todays_cpi / tips.ref_cpi), 5)
+        tips.updated = datetime.datetime.now(tz=TIMEZONE).date()
+        print(f'DEBUG adding index ratio of {tips.index_ratio} to cusip {tips.cusip}')
+        tips.save()

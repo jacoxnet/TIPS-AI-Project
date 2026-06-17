@@ -2,39 +2,30 @@
 {% load static %}
 {% load humanize %}
 
-{% block title %}Build TIPS Ladder{% endblock %}
+{% block title %}Ladder Parameters{% endblock %}
 
 {% block content %}
 <div class="card">
     <div class="flex justify-between items-start mb-4">
-        <h1 style="margin-top: 0.25rem;">Build Your TIPS Ladder</h1>
+        <h1 style="margin-top: 0.25rem;">Ladder Parameters</h1>
         <div style="display: flex; flex-direction: column; gap: 1rem; align-items: flex-end;">
             <div style="display: flex; gap: 0.5rem; align-items: center;">
-                <div style="display: grid; grid-template-columns: repeat(2, minmax(130px, 1fr)); gap: 0.5rem;">
-                    <button type="button" class="btn btn-secondary btn-sm" id="saveCsvBtn" style="width: 100%;">Save to
-                        CSV</button>
-                    <label class="btn btn-secondary btn-sm"
-                        style="display: flex; justify-content: center; align-items: center; margin: 0; cursor: pointer; width: 100%; text-align: center;">
-                        Load from CSV
-                        <input type="file" id="loadCsvBtn" accept=".csv" style="display:none;"><button type="button" class="help-icon" data-modal="helpModalLoadCSV" aria-label="Help">?</button>
-                    </label>
-                </div>
-                <button type="button" class="btn btn-sm" id="sampleCsvBtn"
-                    style="background: #8a8a8a; color: #fff; border: none; padding: 0.3rem 0.7rem; font-size: 0.75rem; border-radius: 6px; cursor: pointer; white-space: nowrap;">Sample Ladder</button>
+                <button 
+                    type="submit" form="specsForm" class="btn btn-primary" 
+                    style="font-size: 1.125rem; padding: 1rem 2rem">Confirm Parameters
+                </button>
             </div>
-            <button type="submit" form="ladderForm" class="btn btn-primary"
-                style="font-size: 1.125rem; padding: 1rem 2rem;">Calculate Ladder Output &rarr;</button>
         </div>
     </div>
-    <form id="ladderForm" action="{% url 'ladder_display' %}" method="POST">
+
+    <form id="specsForm" action="{% url 'specs' %}" method="POST">
         {% csrf_token %}
         <!-- Hidden input for JSON data to submit to backend -->
-        <input type="hidden" name="ladder_data" id="ladderDataInput">
-
+        <input type="hidden" name="specs_data" id="specsDataInput">
+                
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
             <!-- Basic Parameters -->
             <div>
-                <h3>1. Base Parameters</h3>
                 <div class="form-group">
                     <label for="taxRate">Income Tax Rate (%)</label>
                     <input type="number" id="taxRate" name="tax_rate" placeholder="e.g., 24" step="0.1" required>
@@ -108,7 +99,7 @@
             <!-- Different Cash Flows -->
             <div>
                 <div class="flex justify-between items-center mb-4" style="margin-top:0;">
-                    <h3 style="margin-bottom:0;">2. One-Time Real After-Tax Cash Flow Differences (Optional)<button type="button" class="help-icon" data-modal="helpModalCashFlowDiff" aria-label="Help">?</button></h3>
+                    <h3 style="margin-bottom:0;">One-Time Real After-Tax Cash Flow Differences (Optional)<button type="button" class="help-icon" data-modal="helpModalCashFlowDiff" aria-label="Help">?</button></h3>
                     <button type="button" class="btn btn-secondary btn-sm" id="addCashFlowBtn">+ Add Year</button>
                 </div>
                 <div id="additionalCashFlowsContainer">
@@ -116,47 +107,10 @@
                 </div>
             </div>
         </div>
-
-        <hr style="border:0; border-top:1px solid var(--border-color); margin: 2rem 0;">
-
-        <!-- Owned TIPS Section -->
-        <div>
-            <div class="flex justify-between items-center mb-4">
-                <h3 style="margin-bottom:0;">3. Currently Owned TIPS</h3>
-            </div>
-            <div class="table-container mb-4">
-                <table id="ownedTipsTable">
-                    <thead>
-                        <tr>
-                            <th>CUSIP</th>
-                            <th>Maturity / Coupon</th>
-                            <th>Account Type</th>
-                            <th>Quantity ($1000 blocks)</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="ownedTipsTbody">
-                        <!-- Dynamic rows go here -->
-                        <tr id="emptyTipsRow">
-                            <td colspan="5" class="text-center text-secondary">No TIPS added yet. Use the
-                                <strong>+</strong> button to add a TIPS.</td>
-                        </tr>
-                        <!-- Persistent "add" row at the bottom -->
-                        <tr id="addTipsActionRow">
-                            <td colspan="5" style="text-align:center; padding: 0.5rem;">
-                                <button type="button" class="icon-btn icon-btn-add" id="addOwnedTipBtn" title="Add TIPS">&#43;</button>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <div class="text-right mt-4" style="padding-top:1rem;">
-            <button type="submit" class="btn btn-primary" style="font-size: 1.125rem; padding: 1rem 2rem;">Calculate
-                Ladder Output &rarr;</button>
-        </div>
     </form>
+
+    <hr style="border:0; border-top:1px solid var(--border-color); margin: 2rem 0;">
+
 </div>
 
 <!-- Help Modals -->
@@ -190,7 +144,6 @@
 {% endblock %}
 
 {% block extra_js %}
-{{ tips_data|json_script:"tips-data" }}
-{{ ladder_data|json_script:"saved-ladder-data" }}
-<script src="{% static 'js/data_entry.js' %}?v=8"></script>
+{{ specs_data|json_script:"saved-specs-data" }}
+<script src="{% static 'js/specs.js' %}?v=8"></script>
 {% endblock %}
