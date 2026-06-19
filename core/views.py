@@ -10,7 +10,7 @@ from django.shortcuts import render
 from django.conf import settings
 from .fetch import fetch_tips_data, fetch_cpi_data, add_index_ratios, TIMEZONE
 from .tinit import register_new_user
-from .models import User, Tips, Cpi, Specs, Owned_tips
+from .models import User, Tips, Cpi, Specs, Owned_tips, Feedback
 from .ladder_calc import calculate_ladder
 from core.dbstuff import clear_all_otips, add_new_otips, parse_csv, merge_duplicate_otips
 
@@ -400,3 +400,37 @@ def update_owned_tips_view(request):
             'otips_data': otips_data,
             'ladder_years': ladder_years
         })
+
+
+def submit_feedback_view(request):
+    if request.method != "POST":
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+        
+    username = request.session.get('username', None)
+    if not username:
+        user = register_new_user(request)
+    else:
+        user = User.objects.filter(username=username).first()
+        if not user:
+            user = register_new_user(request)
+            
+    try:
+        data = json.loads(request.body)
+        content = data.get('content', '').strip()
+    except (json.JSONDecodeError, TypeError):
+        return JsonResponse({'error': 'Invalid request data'}, status=400)
+        
+    if not content:
+        return JsonResponse({'error': 'Feedback content cannot be empty'}, status=400)
+        
+    # Store feedback in the database
+    Feedback.objects.create(
+        user=user,
+        content=content
+    )
+    
+    return JsonResponse({
+        'status': 'success',
+        'message': 'Thank you for your feedback!'
+    })
+

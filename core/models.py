@@ -149,3 +149,16 @@ class Owned_tips(models.Model):
     
     def __str__(self):
         return f"Owned TIPS user {self.user.username} cusip {self.tips.cusip} quantity {self.quantity}"
+
+
+class Feedback(models.Model):
+    feedback_id = models.AutoField(primary_key=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='feedbacks')
+    date = models.DateTimeField(auto_now_add=True)
+    content = models.TextField()
+
+    class Meta:
+        ordering = ['-date']
+
+    def __str__(self):
+        return f"Feedback from {self.user.username} on {self.date.strftime('%Y-%m-%d %H:%M:%S')}"

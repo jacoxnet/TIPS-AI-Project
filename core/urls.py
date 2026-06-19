@@ -13,4 +13,6 @@ urlpatterns = [
     path('sample_csv', views.sample_csv_view, name='sample_csv'),
     path('clear_data', views.clear_data_view, name='clear_data'),
     path('update_owned_tips/', views.update_owned_tips_view, name='update_owned_tips'),
+    path('submit_feedback/', views.submit_feedback_view, name='submit_feedback'),
 ]
+

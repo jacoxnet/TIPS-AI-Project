@@ -38,6 +38,8 @@
 
     <footer class="footer">
         <a href="#" id="howToLink" class="how-to-link">How to Use this App</a>
+        <br>
+        <a href="#" id="feedbackLink" class="feedback-link">Leave Feedback</a>
         <p>&copy; 2026 After-Tax TIPS Ladder Web App v2.1</p>
     </footer>
 
@@ -49,11 +51,39 @@
         </div>
     </div>
 
+    <!-- Feedback Modal -->
+    <div id="feedbackModal" class="modal">
+        <div class="modal-content modal-content-feedback">
+            <span class="close-modal" id="feedbackCloseBtn">&times;</span>
+            <h2 class="feedback-modal-title">Leave Feedback</h2>
+            <p class="feedback-modal-subtitle">We'd love to hear your thoughts, suggestions, or bug reports.</p>
+            <textarea id="feedbackText" class="feedback-textarea" placeholder="Share your feedback here..."></textarea>
+            <div id="feedbackStatus" class="feedback-status"></div>
+            <div class="feedback-actions">
+                <button id="feedbackSubmitBtn" class="btn btn-primary">Submit</button>
+                <button id="feedbackCancelBtn" class="btn btn-secondary">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     {% block extra_js %}
     {% endblock %}
 
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script>
+        // Get CSRF token from cookies for AJAX requests
+        function getCsrfToken() {
+            const name = 'csrftoken';
+            const cookies = document.cookie.split(';');
+            for (let c of cookies) {
+                const trimmed = c.trim();
+                if (trimmed.startsWith(name + '=')) {
+                    return decodeURIComponent(trimmed.slice(name.length + 1));
+                }
+            }
+            return null;
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             // Generic handler for help icon modals
             document.querySelectorAll('.help-icon[data-modal]').forEach(btn => {
@@ -73,9 +103,10 @@
                 }
             });
 
+            // How-To Modal
             const modal = document.getElementById('howToModal');
             const link = document.getElementById('howToLink');
-            const closeBtn = document.querySelector('.close-modal');
+            const closeBtn = document.querySelector('#howToModal .close-modal');
             const content = document.getElementById('howToContent');
 
             if (link && modal && closeBtn) {
@@ -107,6 +138,86 @@
                     if (e.target == modal) {
                         modal.style.display = 'none';
                     }
+                });
+            }
+
+            // Feedback Modal
+            const feedbackModal = document.getElementById('feedbackModal');
+            const feedbackLink = document.getElementById('feedbackLink');
+            const feedbackCloseBtn = document.getElementById('feedbackCloseBtn');
+            const feedbackCancelBtn = document.getElementById('feedbackCancelBtn');
+            const feedbackSubmitBtn = document.getElementById('feedbackSubmitBtn');
+            const feedbackText = document.getElementById('feedbackText');
+            const feedbackStatus = document.getElementById('feedbackStatus');
+
+            function openFeedbackModal() {
+                feedbackModal.style.display = 'block';
+                feedbackText.value = '';
+                feedbackStatus.textContent = '';
+                feedbackStatus.className = 'feedback-status';
+                feedbackSubmitBtn.disabled = false;
+                feedbackText.focus();
+            }
+
+            function closeFeedbackModal() {
+                feedbackModal.style.display = 'none';
+            }
+
+            if (feedbackLink) {
+                feedbackLink.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    openFeedbackModal();
+                });
+            }
+
+            if (feedbackCloseBtn) {
+                feedbackCloseBtn.addEventListener('click', closeFeedbackModal);
+            }
+
+            if (feedbackCancelBtn) {
+                feedbackCancelBtn.addEventListener('click', closeFeedbackModal);
+            }
+
+            if (feedbackSubmitBtn) {
+                feedbackSubmitBtn.addEventListener('click', () => {
+                    const content = feedbackText.value.trim();
+                    if (!content) {
+                        feedbackStatus.textContent = 'Please enter some feedback before submitting.';
+                        feedbackStatus.className = 'feedback-status feedback-status-error';
+                        return;
+                    }
+
+                    feedbackSubmitBtn.disabled = true;
+                    feedbackStatus.textContent = 'Submitting...';
+                    feedbackStatus.className = 'feedback-status feedback-status-loading';
+
+                    fetch('{% url "submit_feedback" %}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': getCsrfToken(),
+                        },
+                        body: JSON.stringify({ content: content }),
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            feedbackStatus.textContent = '✓ ' + data.message;
+                            feedbackStatus.className = 'feedback-status feedback-status-success';
+                            feedbackText.value = '';
+                            setTimeout(closeFeedbackModal, 2000);
+                        } else {
+                            feedbackStatus.textContent = data.error || 'An error occurred. Please try again.';
+                            feedbackStatus.className = 'feedback-status feedback-status-error';
+                            feedbackSubmitBtn.disabled = false;
+                        }
+                    })
+                    .catch(err => {
+                        feedbackStatus.textContent = 'Network error. Please try again.';
+                        feedbackStatus.className = 'feedback-status feedback-status-error';
+                        feedbackSubmitBtn.disabled = false;
+                        console.error(err);
+                    });
                 });
             }
         });
